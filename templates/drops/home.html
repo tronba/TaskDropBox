@@ -1,17 +1,9 @@
 {% extends "base.html" %}{% load i18n %}
 {% block title %}{% translate "TaskDropBox — local assignment hand-in" %}{% endblock %}
 {% block content %}
-<h1>TaskDropBox</h1>
-<p>{% translate "Create, open, and collect school work on this local network." %}</p>
-<div class="card-grid">
-  <section class="card">
-    <h2>{% translate "Create a task" %}</h2>
-    <p>{% translate "Teachers need the school's six-digit creator PIN." %}</p>
-    <form method="post" action="{% url 'creator_login' %}">
-      {% csrf_token %}{{ creator_form.as_p }}
-      <button type="submit">{% translate "Continue" %}</button>
-    </form>
-  </section>
+<h1>{% translate "Hand in your work" %}</h1>
+<p>{% translate "Open the task your teacher gave you." %}</p>
+<div class="student-entry">
   <section class="card">
     <h2>{% translate "Open a task" %}</h2>
     <p>{% translate "Paste the student task link or key supplied by your teacher." %}</p>
@@ -20,14 +12,6 @@
       <button type="submit">{% translate "Open task" %}</button>
     </form>
   </section>
-  <section class="card">
-    <h2>{% translate "Manage a task" %}</h2>
-    <p>{% translate "Teachers can paste a task's private administration link or key." %}</p>
-    <form method="post" action="{% url 'open_admin' %}">
-      {% csrf_token %}{{ admin_form.as_p }}
-      <button type="submit">{% translate "Manage task" %}</button>
-    </form>
-  </section>
+  <p class="teacher-entry">{% translate "Are you a teacher?" %} <a href="{% url 'teacher_home' %}">{% translate "Open teacher tools" %}</a>.</p>
 </div>
 {% endblock %}
-

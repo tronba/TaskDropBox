@@ -23,7 +23,7 @@ There are no teacher or student accounts. A teacher uses one installation-level 
 - Ubuntu Server 26.04 LTS production target.
 - Plain HTTP at a static private IP such as `http://10.20.0.10`.
 - No DNS, mDNS, certificates, or other infrastructure required.
-- One front page provides entry points for creating, opening, and managing tasks.
+- A pupil-focused front page opens student tasks; a linked teacher page provides creation and management entry points.
 - Task creation requires a system-wide six-digit PIN configured during installation.
 - Desktop and Chromebook browsers are the primary clients.
 - English-only interface with all source strings translation-ready.
@@ -105,7 +105,7 @@ The isolated LAN is operationally trusted but may contain curious students. Plai
 
 ### Create
 
-1. Teacher opens the TaskDropBox front page and selects **Create a task**.
+1. Teacher opens **Teacher tools** from the TaskDropBox front page and selects **Create a task**.
 2. Teacher enters the shared six-digit creator PIN if no valid creator session exists.
 3. Teacher supplies title, plain-text instructions, optional due date/time, optional task attachments, and allowed answer modes.
 4. At least one of text or files must be enabled.
@@ -295,7 +295,8 @@ Student tokens remain in URLs, so Nginx and Django logs must omit or redact capa
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/` | front page with create, student-open, and teacher-manage entry points |
+| GET | `/` | pupil-focused front page with the student-open entry point |
+| GET | `/teacher/` | teacher entry page for task creation and management |
 | GET, POST | `/create/login/` | creator session |
 | GET, POST | `/create/` | create task |
 | POST | `/open/` | accept a student link/key and redirect to its task |
@@ -395,13 +396,14 @@ HTTP cookies cannot be marked `Secure`. Documentation must state this plainly an
 - Use local fonts, CSS, icons, and scripts only.
 - Core workflows work with JavaScript disabled.
 
-The front page is the single memorable entry point and contains three clearly separated sections:
+The front page is the single memorable pupil entry point. It prominently provides **Open a task**, which accepts a complete student link or student key, and includes a clear link to **Teacher tools**.
+
+The separate teacher page contains two clearly separated sections:
 
 1. **Create a task** — asks for the system-wide creator PIN and then opens the creation form.
-2. **Open a task** — accepts a complete student link or student key.
-3. **Manage a task** — accepts a complete secret teacher link or administration key.
+2. **Manage a task** — accepts a complete secret teacher link or administration key.
 
-The front page never lists existing V1 tasks. It explains that the creation PIN only permits task creation, while every task has its own separate administration secret.
+Neither entry page lists existing V1 tasks. The teacher page explains that the creation PIN only permits task creation, while every task has its own separate administration secret.
 
 V1 ships only English, but every UI string uses Django gettext from the start. Future translations live in `locale/<language>/LC_MESSAGES/django.po` and compiled `.mo` files. Do not show a language selector until another complete translation is bundled. Teacher and student content is never automatically translated.
 
@@ -520,7 +522,7 @@ V1 is accepted when:
 
 1. it installs on clean Ubuntu Server 26.04 and safely handles updates/reboots;
 2. the full workflow works with WAN blocked and no DNS;
-3. the front page exposes the three defined entry points, and only the current creator PIN authorizes creation;
+3. the pupil-focused front page opens student tasks, the linked teacher page exposes creation and management, and only the current creator PIN authorizes creation;
 4. student/admin tokens are independent, high entropy, hashed, and absent from routine logs;
 5. a student submits name, text, and multiple files exactly once;
 6. overdue open work is accepted and marked late; closed work is rejected;
@@ -555,8 +557,8 @@ Each stage leaves tests passing. Authorization, file consistency, deletion, and 
 
 ## 25. Invariants
 
-An implementation agent must not silently change: the product name or license; accountless model; three-part front page; system-wide six-digit creator PIN; self-reported per-submission name; independent hashed capabilities; V1 plain text and no drafts; soft deadline plus separate closing; V1 ZIP export; manual retention and reject-only disk behavior; complete live deletion; English-only translation-ready interface; no V1 QR; desktop/Chromebook priority; Ubuntu 26.04; static-IP HTTP without DNS/certificates; offline runtime; or SQLite/private local files.
+An implementation agent must not silently change: the product name or license; accountless model; pupil-focused front page with separate teacher tools; system-wide six-digit creator PIN; self-reported per-submission name; independent hashed capabilities; V1 plain text and no drafts; soft deadline plus separate closing; V1 ZIP export; manual retention and reject-only disk behavior; complete live deletion; English-only translation-ready interface; no V1 QR; desktop/Chromebook priority; Ubuntu 26.04; static-IP HTTP without DNS/certificates; offline runtime; or SQLite/private local files.
 
 ## 26. Handoff prompt
 
-> Implement TaskDropBox V1 from this document as a GitHub-ready AGPL-3.0-or-later project. Target Ubuntu Server 26.04 and standalone HTTP at a static private IP without DNS, certificates, cloud services, or runtime Internet. Use Django, SQLite, Gunicorn, Nginx, server-rendered templates, and minimal optional JavaScript. Do not create accounts. The front page provides Create, Open, and Manage entry points. Task creation requires a rate-limited system-wide six-digit PIN whose hash is configured at installation and safely replaceable later; changing it invalidates creator sessions. Student and admin access use separate independent hashed capability keys. V1 has plain-text instructions/answers and no drafts. A due date is soft: open tasks accept work and record late state; closing is the hard stop. Implement private file storage, individual downloads, safe ZIP export with UTF-8 web-answer files, original uploaded documents, readable collision-safe names, and CSV manifest. Manual deletion removes all live task content including names and files. Manual retention and low-disk rejection apply in V1. Make UI strings translation-ready but ship only English. Pin dependencies, test authorization and security boundaries, and provide an idempotent installer that updates a preparation-time Ubuntu VM, safely handles reboot requirements, and leaves all runtime workflows functional with WAN blocked. Do not add rich text, drafts, automatic retention, QR codes, telemetry, external assets, or online services to V1.
+> Implement TaskDropBox V1 from this document as a GitHub-ready AGPL-3.0-or-later project. Target Ubuntu Server 26.04 and standalone HTTP at a static private IP without DNS, certificates, cloud services, or runtime Internet. Use Django, SQLite, Gunicorn, Nginx, server-rendered templates, and minimal optional JavaScript. Do not create accounts. Use a pupil-focused front page for opening tasks and a clearly linked teacher page for Create and Manage entry points. Task creation requires a rate-limited system-wide six-digit PIN whose hash is configured during installation and safely replaceable later; changing it invalidates creator sessions. Student and admin access use separate independent hashed capability keys. V1 has plain-text instructions/answers and no drafts. A due date is soft: open tasks accept work and record late state; closing is the hard stop. Implement private file storage, individual downloads, safe ZIP export with UTF-8 web-answer files, original uploaded documents, readable collision-safe names, and CSV manifest. Manual deletion removes all live task content including names and files. Manual retention and low-disk rejection apply in V1. Make UI strings translation-ready but ship only English. Pin dependencies, test authorization and security boundaries, and provide an idempotent installer that updates a preparation-time Ubuntu VM, safely handles reboot requirements, and leaves all runtime workflows functional with WAN blocked. Do not add rich text, drafts, automatic retention, QR codes, telemetry, external assets, or online services to V1.

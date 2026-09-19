@@ -60,9 +60,17 @@ def home(request):
     return render(
         request,
         "drops/home.html",
+        {"student_form": CapabilityForm(prefix="student")},
+    )
+
+
+@require_GET
+def teacher_home(request):
+    return render(
+        request,
+        "drops/teacher_home.html",
         {
             "creator_form": CreatorPinForm(),
-            "student_form": CapabilityForm(prefix="student"),
             "admin_form": CapabilityForm(prefix="admin"),
         },
     )
@@ -143,7 +151,7 @@ def open_admin(request):
                 grant_task_admin(request, task.id)
                 return redirect("manage_task", task_id=task.id)
     messages.error(request, _("That teacher task link or key was not accepted."))
-    return redirect("home")
+    return redirect("teacher_home")
 
 
 def task_by_student_token(raw_token):
@@ -285,7 +293,7 @@ def delete_task_view(request, task_id):
     if request.method == "POST":
         delete_task(task)
         messages.success(request, _("The task and all of its live content were deleted."))
-        return redirect("home")
+        return redirect("teacher_home")
     return render(request, "drops/confirm_delete_task.html", {"task": task})
 
 

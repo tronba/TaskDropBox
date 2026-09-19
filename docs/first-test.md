@@ -64,8 +64,8 @@ taskdropbox taskdropbox 750 /var/lib/taskdropbox
 
 From a second computer, open the static-IP URL.
 
-1. Confirm the front page has **Create a task**, **Open a task**, and **Manage a task**.
-2. Enter two incorrect creator PINs, then the correct PIN. Confirm the correct PIN succeeds.
+1. Confirm the front page prominently offers **Open a task** and links to **Teacher tools**, without showing teacher forms.
+2. Open **Teacher tools** and confirm it has **Create a task** and **Manage a task**. Enter two incorrect creator PINs, then the correct PIN. Confirm the correct PIN succeeds.
 3. Create a task with:
    - a title;
    - multiline instructions containing literal `<script>alert(1)</script>` text;
@@ -90,7 +90,7 @@ From a second computer, open the static-IP URL.
 3. Close that task and confirm a new submission receives a closed-task message.
 4. Reopen it, submit again, and confirm the new work is marked late.
 5. In a private/incognito browser without the admin link, try the clean `/manage/<task UUID>/` URL copied from the authorized browser. Expect a generic 404.
-6. Enter an invalid student key and invalid admin key on the front page. Confirm neither reveals whether a similar task exists.
+6. Enter an invalid student key on the front page and an invalid admin key on the teacher page. Confirm neither reveals whether a similar task exists.
 7. Confirm student pages never show names, counts, or files from other submissions.
 
 ## 6. Delete and storage verification

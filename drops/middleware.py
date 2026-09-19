@@ -39,6 +39,8 @@ class SecurityHeadersMiddleware:
         response.headers.setdefault(
             "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"
         )
-        if request.path.startswith(("/create", "/d/", "/a/", "/manage/", "/receipt/")):
+        if request.path == "/" or request.path.startswith(
+            ("/teacher/", "/create", "/d/", "/a/", "/manage/", "/receipt/")
+        ):
             response.headers["Cache-Control"] = "no-store"
         return response

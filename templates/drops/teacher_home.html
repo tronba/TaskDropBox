@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Teacher tools — TaskDropBox" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Teacher tools" %}</h1>
+<p>{% translate "Create a new task or open an existing task's private management page." %}</p>
+<div class="card-grid">
+  <section class="card">
+    <h2>{% translate "Create a task" %}</h2>
+    <p>{% translate "Enter the school's six-digit creator PIN." %}</p>
+    <form method="post" action="{% url 'creator_login' %}">
+      {% csrf_token %}{{ creator_form.as_p }}
+      <button type="submit">{% translate "Continue" %}</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>{% translate "Manage a task" %}</h2>
+    <p>{% translate "Paste the task's private teacher link or administration key." %}</p>
+    <form method="post" action="{% url 'open_admin' %}">
+      {% csrf_token %}{{ admin_form.as_p }}
+      <button type="submit">{% translate "Manage task" %}</button>
+    </form>
+  </section>
+</div>
+<p><a href="{% url 'home' %}">{% translate "Return to pupil hand-in" %}</a></p>
+{% endblock %}

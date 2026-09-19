@@ -36,6 +36,21 @@ class WorkflowTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.headers["Referrer-Policy"], "same-origin")
 
+    def test_front_page_is_pupil_centric(self):
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "Hand in your work")
+        self.assertContains(response, "Open a task")
+        self.assertContains(response, reverse("teacher_home"))
+        self.assertNotContains(response, "Create a task")
+        self.assertNotContains(response, "Manage a task")
+
+    def test_teacher_page_contains_creation_and_management_entry_points(self):
+        response = self.client.get(reverse("teacher_home"))
+        self.assertContains(response, "Teacher tools")
+        self.assertContains(response, "Create a task")
+        self.assertContains(response, "Manage a task")
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+
     def create_task_through_ui(self, **overrides):
         response = self.client.post(reverse("creator_login"), {"pin": "012345"})
         self.assertRedirects(response, reverse("task_create"))
@@ -113,6 +128,12 @@ class WorkflowTests(TestCase):
         task, student_token, _ = self.create_task_through_ui(
             due_at=(timezone.now() - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M")
         )
+        response = self.client.get(reverse("student_task", args=[student_token]))
+        late_notice = (
+            "The due time has passed. You may still submit, but your work will be marked late."
+        )
+        self.assertContains(response, late_notice, count=1)
+        self.assertContains(response, 'class="warning"', count=1)
         response = self.client.post(
             reverse("submit_task", args=[student_token]),
             {
@@ -170,7 +191,7 @@ class WorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Submission.objects.get().is_late)
 
-    def test_front_page_accepts_student_and_admin_keys(self):
+    def test_entry_pages_accept_student_and_admin_keys(self):
         task, student_token, admin_token = self.create_task_through_ui()
         response = self.client.post(reverse("open_student"), {"student-key": student_token})
         self.assertRedirects(response, reverse("student_task", args=[student_token]))
@@ -216,7 +237,7 @@ class WorkflowTests(TestCase):
         self.assertTrue(stored_path.exists())
         self.client.get(reverse("admin_exchange", args=[admin_token]))
         response = self.client.post(reverse("delete_task", args=[task.id]))
-        self.assertRedirects(response, reverse("home"))
+        self.assertRedirects(response, reverse("teacher_home"))
         self.assertFalse(Task.objects.exists())
         self.assertFalse(Submission.objects.exists())
         self.assertFalse(stored_path.exists())
@@ -225,7 +246,7 @@ class WorkflowTests(TestCase):
         task, _, admin_token = self.create_task_through_ui()
         self.client.get(reverse("admin_exchange", args=[admin_token]))
         response = self.client.post(reverse("delete_task", args=[task.id]))
-        self.assertRedirects(response, reverse("home"))
+        self.assertRedirects(response, reverse("teacher_home"))
         self.assertFalse(Task.objects.filter(pk=task.id).exists())
 
     def test_submission_deletion_preserves_other_submission(self):

@@ -22,7 +22,7 @@ The project directory may be moved or renamed. Runtime paths on Ubuntu are fixed
 - License: GNU Affero General Public License v3.0 or later.
 - English-only V1, with Django translation-ready UI strings.
 - No student or teacher accounts.
-- The front page has three areas: create a task, open a student task, and manage a task.
+- The front page is pupil-focused and opens student tasks; a linked teacher page provides task creation and management.
 - Creating tasks requires one system-wide six-digit PIN. Only its password hash is stored.
 - Each task receives independent random student and teacher capability links/keys. Only their hashes are stored.
 - The one-time creation page is the only normal place where the complete links are displayed; they must be saved or printed.
