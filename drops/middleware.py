@@ -1,6 +1,7 @@
 import logging
 import secrets
 
+from django.http import Http404
 from django.utils.deprecation import MiddlewareMixin
 
 error_logger = logging.getLogger("taskdropbox.errors")
@@ -17,6 +18,8 @@ class CorrelationIdMiddleware(MiddlewareMixin):
         return response
 
     def process_exception(self, request, exception):
+        if isinstance(exception, Http404):
+            return None
         error_logger.exception(
             "unexpected_error correlation=%s",
             getattr(request, "correlation_id", "unavailable"),

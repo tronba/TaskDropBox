@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from drops.models import Submission, Task
-from drops.tokens import digest_token, new_admin_token, new_student_token
+from drops.tokens import digest_token, new_admin_token, new_form_nonce, new_student_token
 
 
 class WorkflowTests(TestCase):
@@ -68,6 +68,7 @@ class WorkflowTests(TestCase):
         task = Task.objects.get()
         student_url = response.context["student_url"]
         admin_url = response.context["admin_url"]
+        self.assertEqual(response.context["student_key"], student_url.rstrip("/").split("/")[-1])
         return task, student_url.rstrip("/").split("/")[-1], admin_url.rstrip("/").split("/")[-1]
 
     def test_complete_create_submit_review_flow(self):
@@ -139,7 +140,7 @@ class WorkflowTests(TestCase):
             {
                 "student_name": "Late Student",
                 "answer_text": "Finished.",
-                "idempotency_key": new_student_token(),
+                "idempotency_key": new_form_nonce(),
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -157,7 +158,7 @@ class WorkflowTests(TestCase):
                 {
                     "student_name": "Boundary Student",
                     "answer_text": "Finished exactly on time.",
-                    "idempotency_key": new_student_token(),
+                    "idempotency_key": new_form_nonce(),
                 },
             )
         self.assertEqual(response.status_code, 302)
@@ -174,7 +175,7 @@ class WorkflowTests(TestCase):
             {
                 "student_name": "Student",
                 "answer_text": "Answer",
-                "idempotency_key": new_student_token(),
+                "idempotency_key": new_form_nonce(),
             },
         )
         self.assertEqual(response.status_code, 409)
@@ -185,7 +186,7 @@ class WorkflowTests(TestCase):
             {
                 "student_name": "Student",
                 "answer_text": "Answer",
-                "idempotency_key": new_student_token(),
+                "idempotency_key": new_form_nonce(),
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -205,7 +206,7 @@ class WorkflowTests(TestCase):
             {
                 "student_name": "=Anna/../Hansen",
                 "answer_text": "Web answer",
-                "idempotency_key": new_student_token(),
+                "idempotency_key": new_form_nonce(),
                 "files": SimpleUploadedFile("../notes.txt", b"notes"),
             },
         )
@@ -229,7 +230,7 @@ class WorkflowTests(TestCase):
             {
                 "student_name": "Student",
                 "answer_text": "Answer",
-                "idempotency_key": new_student_token(),
+                "idempotency_key": new_form_nonce(),
                 "files": SimpleUploadedFile("work.txt", b"private"),
             },
         )
@@ -257,7 +258,7 @@ class WorkflowTests(TestCase):
                 {
                     "student_name": name,
                     "answer_text": "Answer",
-                    "idempotency_key": new_student_token(),
+                    "idempotency_key": new_form_nonce(),
                     "files": SimpleUploadedFile(f"{name}.txt", name.encode()),
                 },
             )
@@ -280,7 +281,7 @@ class WorkflowTests(TestCase):
             {
                 "student_name": "Student",
                 "answer_text": "Answer",
-                "idempotency_key": new_student_token(),
+                "idempotency_key": new_form_nonce(),
                 "files": SimpleUploadedFile("private.txt", b"private"),
             },
         )
@@ -299,9 +300,38 @@ class WorkflowTests(TestCase):
             404,
         )
 
+    def test_safe_files_preview_inline_and_risky_files_download(self):
+        task, student_token, admin_token = self.create_task_through_ui()
+        self.client.post(
+            reverse("submit_task", args=[student_token]),
+            {
+                "student_name": "Student",
+                "answer_text": "Answer",
+                "idempotency_key": new_form_nonce(),
+                "files": [
+                    SimpleUploadedFile("notes.txt", b"plain text", content_type="text/plain"),
+                    SimpleUploadedFile("page.html", b"<script>alert(1)</script>", content_type="text/html"),
+                ],
+            },
+        )
+        self.client.get(reverse("admin_exchange", args=[admin_token]))
+        submission = task.submissions.get()
+
+        text_file = submission.files.get(original_name="notes.txt")
+        response = self.client.get(reverse("submission_file_download", args=[task.id, text_file.id]))
+        self.assertEqual(response["Content-Type"], "text/plain")
+        self.assertTrue(response["Content-Disposition"].startswith("inline;"))
+        response.close()
+
+        html_file = submission.files.get(original_name="page.html")
+        response = self.client.get(reverse("submission_file_download", args=[task.id, html_file.id]))
+        self.assertEqual(response["Content-Type"], "application/octet-stream")
+        self.assertTrue(response["Content-Disposition"].startswith("attachment;"))
+        response.close()
+
     def test_repeated_submission_nonce_returns_the_original_receipt(self):
         task, student_token, _ = self.create_task_through_ui()
-        key = new_student_token()
+        key = new_form_nonce()
         payload = {"student_name": "Student", "answer_text": "Answer", "idempotency_key": key}
         first = self.client.post(reverse("submit_task", args=[student_token]), payload)
         second = self.client.post(reverse("submit_task", args=[student_token]), payload)

@@ -14,6 +14,8 @@ server {
     limit_req_status 429;
     limit_conn_status 429;
     server_tokens off;
+    proxy_headers_hash_max_size 1024;
+    proxy_headers_hash_bucket_size 128;
 
     # Capability URLs and student filenames must not enter ordinary access logs.
     access_log off;

@@ -24,7 +24,7 @@ The project directory may be moved or renamed. Runtime paths on Ubuntu are fixed
 - No student or teacher accounts.
 - The front page is pupil-focused and opens student tasks; a linked teacher page provides task creation and management.
 - Creating tasks requires one system-wide six-digit PIN. Only its password hash is stored.
-- Each task receives independent random student and teacher capability links/keys. Only their hashes are stored.
+- Each task receives an independent readable three-word student capability and a high-entropy teacher capability. Only their hashes are stored.
 - The one-time creation page is the only normal place where the complete links are displayed; they must be saved or printed.
 - Students manually enter their names for each submission.
 - V1 supports plain-text answers and uploaded files, but no drafts or rich-text editor.

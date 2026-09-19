@@ -72,10 +72,10 @@ From a second computer, open the static-IP URL.
    - a due time five minutes in the future;
    - text and file answers enabled;
    - one harmless task attachment.
-4. Save both generated links outside the browser.
+4. Confirm the student key contains three readable words, then save both generated links outside the browser.
 5. Confirm the script text displays as text and never executes.
 6. Open the student task from its full link.
-7. Download the task attachment.
+7. Open the task attachment. Confirm browser-safe images, media, PDFs, or plain text open in a new tab, while other formats download.
 8. Submit a student name, web answer, and two harmless files.
 9. Confirm one receipt appears with name, time, filenames, and on-time status but not answer text.
 10. Refresh the receipt and confirm no second submission is created.

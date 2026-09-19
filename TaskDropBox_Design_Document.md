@@ -278,14 +278,14 @@ UUID, submission foreign key with cascade, normalized `original_name`, random `s
 
 ## 11. Capability tokens and sessions
 
-Generate tokens independently with Python `secrets`:
+Generate student and administration capabilities independently with Python `secrets`:
 
 ```python
-student_token = secrets.token_urlsafe(16)  # about 128 bits
-admin_token = secrets.token_urlsafe(32)    # about 256 bits
+student_token = "-".join(secrets.choice(eff_words) for _ in range(3))
+admin_token = secrets.token_urlsafe(32)  # about 256 bits
 ```
 
-Store only `sha256(raw_token).hexdigest()`. Slow password hashing is for the human creator PIN; high-entropy tokens use indexed SHA-256 digests.
+The bundled EFF large wordlist contributes about 12.9 bits per independently selected word, giving the readable student key about 38.8 bits across three words. This is an intentional usability tradeoff for the rate-limited, isolated-LAN student entry point; it must not be reused for teacher administration. Store only `sha256(raw_token).hexdigest()`. Slow password hashing is for the human creator PIN; random capabilities use indexed SHA-256 digests.
 
 Admin-token exchange resolves the token, grants only that task UUID in an HTTP-only signed session, redirects to a clean management URL, and does not display or log the token again. Grants default to eight hours. A task A grant never authorizes task B.
 
@@ -329,14 +329,14 @@ Recommended defaults: 10 task attachments, 10 files per submission, 25 MiB per f
 - Generate random storage names and retain a normalized, length-limited display name as metadata.
 - Never join filesystem paths from user input.
 - Store files outside static directories on a non-executable tree.
-- Force attachment download with safe `Content-Disposition` and `X-Content-Type-Options: nosniff`.
+- Preview a narrow allowlist of browser-safe images, media, PDF, and plain text inline with `X-Content-Type-Options: nosniff`; force every other attachment to download with safe `Content-Disposition`.
 - Use `application/octet-stream` when uncertain.
 - Compute SHA-256 while saving.
 - Enforce file, count, aggregate, body, and disk-reserve limits.
 - Remove partial temporary files after failure.
 - Do not trust extensions or browser MIME claims.
 
-V1 permits ordinary school file types without an allowlist; files are never executed or rendered inline.
+V1 accepts ordinary school file types without an upload allowlist. Inline preview eligibility is derived from a narrow filename-based MIME allowlist, never from the browser's claimed upload type. HTML, SVG, scripts, archives, and unknown formats are always served as `application/octet-stream` attachments.
 
 Submission service flow: resolve task, validate fields and free space, stream to private temporary files, begin a short transaction, lock and recheck task state, calculate late state, create records, move files to final random paths, commit when consistent, and clean up on failure. A maintenance command reports missing and orphaned files.
 
@@ -368,7 +368,7 @@ Volcano-assignment_2026-09-19/
 
 ## 15. Security controls
 
-- independent high-entropy capabilities;
+- independently generated readable student capabilities and high-entropy administration capabilities;
 - slow creator-PIN hashing;
 - Nginx rate, connection, timeout, and body limits;
 - CSRF on mutations;
@@ -523,7 +523,7 @@ V1 is accepted when:
 1. it installs on clean Ubuntu Server 26.04 and safely handles updates/reboots;
 2. the full workflow works with WAN blocked and no DNS;
 3. the pupil-focused front page opens student tasks, the linked teacher page exposes creation and management, and only the current creator PIN authorizes creation;
-4. student/admin tokens are independent, high entropy, hashed, and absent from routine logs;
+4. student/admin tokens are independent, randomly generated, hashed, and absent from routine logs, with administration tokens retaining high entropy;
 5. a student submits name, text, and multiple files exactly once;
 6. overdue open work is accepted and marked late; closed work is rejected;
 7. students cannot access any submission;

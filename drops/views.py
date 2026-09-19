@@ -1,3 +1,4 @@
+import mimetypes
 from functools import wraps
 
 from django.conf import settings
@@ -37,6 +38,22 @@ from .storage import UploadTooLargeError, safe_absolute_path
 from .tokens import digest_token, extract_key, new_form_nonce
 
 CREATION_NONCES_SESSION_KEY = "task_creation_nonces"
+INLINE_PREVIEW_TYPES = {
+    "application/pdf",
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/wav",
+    "audio/x-wav",
+    "image/gif",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "text/plain",
+    "video/mp4",
+    "video/ogg",
+    "video/quicktime",
+    "video/webm",
+}
 
 
 def creator_required(view):
@@ -122,6 +139,7 @@ def task_create(request):
             "drops/task_created.html",
             {
                 "task": task,
+                "student_key": student_token,
                 "student_url": f"{settings.BASE_URL}/d/{student_token}/",
                 "admin_url": f"{settings.BASE_URL}/a/{admin_token}/",
             },
@@ -301,8 +319,17 @@ def private_file_response(item):
     path = safe_absolute_path(item.storage_name)
     if not path.is_file():
         raise Http404
-    response = FileResponse(path.open("rb"), as_attachment=True, filename=item.original_name)
+    guessed_type = mimetypes.guess_type(item.original_name)[0]
+    preview_inline = guessed_type in INLINE_PREVIEW_TYPES
+    response = FileResponse(
+        path.open("rb"),
+        as_attachment=not preview_inline,
+        filename=item.original_name,
+        content_type=guessed_type if preview_inline else "application/octet-stream",
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
+    if preview_inline:
+        response.headers["Content-Security-Policy"] = "sandbox; default-src 'none'"
     return response
 
 

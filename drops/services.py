@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from django.db import connection, transaction
+from django.db import OperationalError, connection, transaction
 from django.utils import timezone
 
 from .models import Submission, SubmissionFile, Task, TaskAttachment
@@ -185,11 +185,16 @@ def delete_task(task):
 def checkpoint_after_deletion():
     if connection.vendor != "sqlite":
         return
+    if connection.in_atomic_block:
+        transaction.on_commit(checkpoint_after_deletion)
+        return
     try:
         with connection.cursor() as cursor:
             cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
             result = cursor.fetchone()
         if result and result[0]:
             logger.warning("sqlite_wal_checkpoint_busy result=%s", result)
+    except OperationalError as error:
+        logger.warning("sqlite_wal_checkpoint_deferred error=%s", error)
     except Exception:
         logger.exception("sqlite_wal_checkpoint_failed")
