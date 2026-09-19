@@ -1,7 +1,5 @@
 # TaskDropBox
 
-Copyright © 2026 TaskDropBox contributors.
-
 TaskDropBox is an accountless assignment hand-in box for an isolated school LAN. It is designed to be prepared before an Internet outage and then run from a standalone Ubuntu Server VM without DNS, cloud services, external assets, or runtime Internet access.
 
 V1 is ready for disposable-VM validation. The implementation specification is in [TaskDropBox_Design_Document.md](TaskDropBox_Design_Document.md).

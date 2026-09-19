@@ -234,7 +234,11 @@ rm -f "$SOURCE_ARCHIVE_TEMP"
 if [[ -n "$PIN" ]]; then
   PIN_HASH="$(PIN_VALUE="$PIN" "$APP_DIR/venv/bin/python" - <<'PY'
 import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
 from django.contrib.auth.hashers import make_password
+
 print(make_password(os.environ["PIN_VALUE"], hasher="argon2"))
 PY
 )"
