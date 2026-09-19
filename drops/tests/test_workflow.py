@@ -32,6 +32,10 @@ class WorkflowTests(TestCase):
         self.settings_override.disable()
         self.temporary.cleanup()
 
+    def test_same_origin_form_posts_preserve_their_origin(self):
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.headers["Referrer-Policy"], "same-origin")
+
     def create_task_through_ui(self, **overrides):
         response = self.client.post(reverse("creator_login"), {"pin": "012345"})
         self.assertRedirects(response, reverse("task_create"))

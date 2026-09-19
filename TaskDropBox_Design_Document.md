@@ -380,7 +380,7 @@ Volcano-assignment_2026-09-19/
 
 Suggested rate limits: 5 creator-PIN attempts/minute/IP plus an installation-wide limit, 10 task creations/hour/IP, 10 submissions/minute/IP with burst 5, 60 capability/404 requests/minute/IP, and a concurrent download limit. Values remain configurable.
 
-Set a local-only CSP, `nosniff`, `Referrer-Policy: no-referrer`, `frame-ancestors 'none'`, restrictive `Permissions-Policy`, and `Cache-Control: no-store` on creator, capability, receipt, and admin pages.
+Set a local-only CSP, `nosniff`, `Referrer-Policy: same-origin`, `frame-ancestors 'none'`, restrictive `Permissions-Policy`, and `Cache-Control: no-store` on creator, capability, receipt, and admin pages. The same-origin referrer policy is required so browser form submissions retain a usable `Origin` for Django's CSRF validation while still withholding referrers from other origins.
 
 HTTP cookies cannot be marked `Secure`. Documentation must state this plainly and never imply that an isolated LAN provides encrypted transport.
 
