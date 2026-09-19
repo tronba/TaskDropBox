@@ -1,0 +1,25 @@
+[Unit]
+Description=TaskDropBox application server
+After=network.target
+
+[Service]
+Type=simple
+User=taskdropbox
+Group=taskdropbox
+WorkingDirectory=/opt/taskdropbox
+EnvironmentFile=/etc/taskdropbox/taskdropbox.env
+UMask=0027
+ExecStart=/opt/taskdropbox/venv/bin/gunicorn --workers 3 --timeout 120 --bind 127.0.0.1:8001 config.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillSignal=SIGQUIT
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=3
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/taskdropbox
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

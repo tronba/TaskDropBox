@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{% translate "Something went wrong" %}</h1>
+<p>{% translate "The request could not be completed. No success receipt was created." %}</p>
+<p>{% translate "Reference:" %} <code>{{ correlation_id }}</code></p>
+<p><a href="{% url 'home' %}">{% translate "Return to TaskDropBox" %}</a></p>{% endblock %}

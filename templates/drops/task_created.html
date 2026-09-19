@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{% translate "Task created" %}</h1>
+<p><strong>{{ task.title }}</strong></p>
+<div class="warning"><strong>{% translate "Save the teacher link now." %}</strong>
+{% translate "TaskDropBox cannot recover it through the normal interface. Save or print both links before leaving or refreshing this page." %}</div>
+<label for="student-url">{% translate "Student link" %}</label>
+<textarea id="student-url" readonly rows="3">{{ student_url }}</textarea>
+<label for="admin-url">{% translate "Private teacher link" %}</label>
+<textarea id="admin-url" readonly rows="4">{{ admin_url }}</textarea>
+<p><button type="button" data-print-page>{% translate "Print this page" %}</button></p>
+{% endblock %}

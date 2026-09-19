@@ -1,0 +1,49 @@
+limit_req_zone $binary_remote_addr zone=taskdropbox_creator:10m rate=5r/m;
+limit_req_zone $binary_remote_addr zone=taskdropbox_general:10m rate=60r/m;
+limit_req_zone $binary_remote_addr zone=taskdropbox_submission:10m rate=10r/m;
+limit_conn_zone $binary_remote_addr zone=taskdropbox_downloads:10m;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    client_max_body_size __REQUEST_MIB__M;
+    client_body_timeout 120s;
+    send_timeout 120s;
+    limit_req_status 429;
+    limit_conn_status 429;
+    server_tokens off;
+
+    # Capability URLs and student filenames must not enter ordinary access logs.
+    access_log off;
+    # Lower-severity Nginx errors can include the request URI and therefore a capability key.
+    # Django provides redacted operational errors; retain only critical proxy failures here.
+    error_log /var/log/nginx/taskdropbox-error.log crit;
+
+    location = /create/login/ {
+        limit_req zone=taskdropbox_creator burst=2 nodelay;
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8001;
+    }
+
+    location ~ ^/d/[^/]+/submit/$ {
+        limit_req zone=taskdropbox_submission burst=5 nodelay;
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8001;
+    }
+
+    location /static/ {
+        alias /opt/taskdropbox/staticfiles/;
+        expires 1h;
+        add_header Cache-Control "public, max-age=3600";
+    }
+
+    location / {
+        limit_req zone=taskdropbox_general burst=20 nodelay;
+        limit_conn taskdropbox_downloads 6;
+        include proxy_params;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://127.0.0.1:8001;
+    }
+}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n tz %}
+{% block content %}<h1>{% translate "Submission received" %}</h1>
+<dl>
+  <dt>{% translate "Task" %}</dt><dd>{{ submission.task.title }}</dd>
+  <dt>{% translate "Name" %}</dt><dd>{{ submission.student_name }}</dd>
+  <dt>{% translate "Received" %}</dt><dd>{{ submission.submitted_at|localtime }}</dd>
+  <dt>{% translate "Status" %}</dt><dd>{% if submission.is_late %}{% translate "Late" %}{% else %}{% translate "On time" %}{% endif %}</dd>
+  <dt>{% translate "Receipt" %}</dt><dd><code>{{ submission.receipt_id }}</code></dd>
+</dl>
+{% if submission.files.exists %}<h2>{% translate "Accepted files" %}</h2><ul>{% for item in submission.files.all %}<li>{{ item.original_name }}</li>{% endfor %}</ul>{% endif %}
+{% endblock %}
+

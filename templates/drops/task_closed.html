@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{{ task.title }}</h1><p class="warning">{% translate "This task was closed before your submission could be accepted." %}</p>{% endblock %}
+

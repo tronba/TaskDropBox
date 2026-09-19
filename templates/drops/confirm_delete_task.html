@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{% translate "Delete task" %}</h1>
+<p>{% blocktranslate with task=task.title %}Permanently delete “{{ task }}” and every submission?{% endblocktranslate %}</p>
+<p class="warning">{% translate "This removes all live instructions, names, answers, attachments, and uploaded files. This cannot be undone through TaskDropBox." %}</p>
+<form method="post">{% csrf_token %}<button class="danger" type="submit">{% translate "Yes, delete task and everything in it" %}</button></form>
+<p><a href="{% url 'manage_task' task.id %}">{% translate "Cancel" %}</a></p>{% endblock %}
+

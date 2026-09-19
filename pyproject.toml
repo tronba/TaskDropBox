@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taskdropbox"
+version = "0.1.0"
+description = "A standalone, accountless assignment hand-in box for school LANs"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "AGPL-3.0-or-later"
+authors = [{name = "TaskDropBox contributors"}]
+dependencies = [
+  "Django==5.2.17",
+  "argon2-cffi==25.1.0",
+  "gunicorn==23.0.0; platform_system != 'Windows'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "coverage==7.10.6",
+  "ruff==0.13.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["config*", "drops*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["F"]
+ignore = ["E501"]
+exclude = ["drops/migrations"]

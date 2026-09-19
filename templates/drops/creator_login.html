@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{% translate "Create a task" %}</h1>
+{% include "drops/_form_errors.html" %}
+<form method="post">{% csrf_token %}{{ form.as_p }}<button>{% translate "Continue" %}</button></form>
+{% endblock %}
+

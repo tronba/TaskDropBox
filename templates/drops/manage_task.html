@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load i18n tz %}
+{% block content %}<h1>{{ task.title }}</h1>
+<p><strong>{% translate "Status:" %}</strong> {{ task.get_status_display }}</p>
+{% if task.due_at %}<p><strong>{% translate "Due:" %}</strong> {{ task.due_at|localtime }}</p>{% endif %}
+<h2>{% translate "Instructions" %}</h2><div class="instructions">{{ task.instructions_text|linebreaksbr }}</div>
+{% if task.attachments.exists %}<h2>{% translate "Task attachments" %}</h2><ul>{% for item in task.attachments.all %}
+  <li><a href="{% url 'admin_task_attachment_download' task.id item.id %}">{{ item.original_name }}</a> ({{ item.size_bytes|filesizeformat }})</li>
+{% endfor %}</ul>{% endif %}
+{% if task.status == "open" %}<form method="post" action="{% url 'close_task' task.id %}">{% csrf_token %}<button>{% translate "Close task" %}</button></form>
+{% else %}<form method="post" action="{% url 'reopen_task' task.id %}">{% csrf_token %}<button>{% translate "Reopen task" %}</button></form>{% endif %}
+<p><a class="button-link" href="{% url 'export_task' task.id %}">{% translate "Export all submissions as ZIP" %}</a></p>
+<h2>{% translate "Submissions" %}</h2>
+{% if submissions %}{% for submission in submissions %}
+<article class="submission">
+  <h3>{{ submission.student_name }}</h3>
+  <p>{{ submission.submitted_at|localtime }} — {% if submission.is_late %}<strong class="late">{% translate "Late" %}</strong>{% else %}{% translate "On time" %}{% endif %}</p>
+  {% if submission.answer_text %}<pre class="answer">{{ submission.answer_text }}</pre>{% endif %}
+  {% if submission.files.all %}<ul>{% for item in submission.files.all %}<li><a href="{% url 'submission_file_download' task.id item.id %}">{{ item.original_name }}</a> ({{ item.size_bytes|filesizeformat }})</li>{% endfor %}</ul>{% endif %}
+  <p><a href="{% url 'delete_submission' task.id submission.id %}">{% translate "Delete this submission" %}</a></p>
+</article>
+{% endfor %}{% else %}<p>{% translate "No submissions yet." %}</p>{% endif %}
+{% if submissions.paginator.num_pages > 1 %}<nav aria-label="{% translate 'Submission pages' %}">
+  {% if submissions.has_previous %}<a href="?page={{ submissions.previous_page_number }}">{% translate "Previous" %}</a>{% endif %}
+  <span>{% blocktranslate with current=submissions.number total=submissions.paginator.num_pages %}Page {{ current }} of {{ total }}{% endblocktranslate %}</span>
+  {% if submissions.has_next %}<a href="?page={{ submissions.next_page_number }}">{% translate "Next" %}</a>{% endif %}
+</nav>{% endif %}
+<hr><p><a class="danger-link" href="{% url 'delete_task' task.id %}">{% translate "Delete this task and all submissions" %}</a></p>
+{% endblock %}

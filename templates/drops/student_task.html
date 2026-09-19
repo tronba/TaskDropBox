@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load i18n tz %}
+{% block content %}
+<h1>{{ task.title }}</h1>
+<div class="instructions">{{ task.instructions_text|linebreaksbr }}</div>
+{% if task.due_at %}<p><strong>{% translate "Due:" %}</strong> {{ task.due_at|localtime }}</p>{% endif %}
+{% if task.status == "closed" %}<p class="warning">{% translate "This task is closed and no longer accepts work." %}</p>
+{% else %}
+  {% if task.due_at and now > task.due_at %}<p class="warning">{% translate "The due time has passed. You may still submit, but your work will be marked late." %}</p>{% endif %}
+  {% if task.attachments.exists %}<h2>{% translate "Task attachments" %}</h2><ul>{% for item in task.attachments.all %}
+    <li><a href="{% url 'task_attachment_download' student_token=request.resolver_match.kwargs.student_token file_id=item.id %}">{{ item.original_name }}</a> ({{ item.size_bytes|filesizeformat }})</li>
+  {% endfor %}</ul>{% endif %}
+  <h2>{% translate "Submit your work" %}</h2>
+  <p class="warning">{% translate "TaskDropBox does not save drafts in this version. Submit before closing this page." %}</p>
+  {% include "drops/_form_errors.html" %}
+  <form method="post" enctype="multipart/form-data" action="{% url 'submit_task' student_token=request.resolver_match.kwargs.student_token %}">
+    {% csrf_token %}{{ form.as_p }}
+    <button type="submit">{% translate "Submit answer" %}</button>
+  </form>
+{% endif %}
+{% endblock %}
+

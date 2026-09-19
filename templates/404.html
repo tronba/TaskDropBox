@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{% translate "Page not found" %}</h1>
+<p>{% translate "The link is invalid, expired, deleted, or unavailable." %}</p>
+<p><a href="{% url 'home' %}">{% translate "Return to TaskDropBox" %}</a></p>{% endblock %}
+

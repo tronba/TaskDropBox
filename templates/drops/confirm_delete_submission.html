@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block content %}<h1>{% translate "Delete submission" %}</h1>
+<p>{% blocktranslate with name=submission.student_name task=task.title %}Permanently delete the submission from {{ name }} for “{{ task }}”?{% endblocktranslate %}</p>
+<p>{% translate "The name, written answer, metadata, and uploaded files will be removed from the live server." %}</p>
+<form method="post">{% csrf_token %}<button class="danger" type="submit">{% translate "Yes, delete submission" %}</button></form>
+<p><a href="{% url 'manage_task' task.id %}">{% translate "Cancel" %}</a></p>{% endblock %}
+

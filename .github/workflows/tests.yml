@@ -1,0 +1,63 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  django:
+    runs-on: ubuntu-24.04
+    env:
+      TASKDROPBOX_SECRET_KEY: ci-only-secret-key-not-for-production
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: bash -n install.sh uninstall.sh deploy/bin/taskdropbox-manage
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+      - run: python -m ruff check .
+
+  ubuntu-installer:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install TaskDropBox on Ubuntu 26.04
+        run: |
+          printf '123456\n' > /tmp/taskdropbox-test-pin
+          chmod 600 /tmp/taskdropbox-test-pin
+          sudo bash install.sh \
+            --non-interactive \
+            --skip-os-updates \
+            --base-url http://127.0.0.1 \
+            --timezone Europe/Oslo \
+            --creator-pin-file /tmp/taskdropbox-test-pin \
+            --min-free-mib 256
+          rm -f /tmp/taskdropbox-test-pin
+      - name: Verify installed service
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1/healthz
+          sudo taskdropbox-manage show_status
+          sudo taskdropbox-manage check_storage --checksums
+          if id -nG www-data | grep -qw taskdropbox; then exit 1; fi
+          sudo -u www-data test ! -r /etc/taskdropbox/taskdropbox.env
+          sudo ss -ltn | grep -q '127.0.0.1:8001'
+          curl --fail --silent --show-error --output /tmp/taskdropbox-source.tar.gz http://127.0.0.1/source/
+          test -s /tmp/taskdropbox-source.tar.gz
+      - name: Verify preserving-data uninstall
+        run: |
+          printf 'y\n' | sudo bash uninstall.sh
+          test -d /var/lib/taskdropbox
+          test -f /etc/taskdropbox/taskdropbox.env
+          test ! -d /opt/taskdropbox
