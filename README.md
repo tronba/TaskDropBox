@@ -42,7 +42,7 @@ When a suitable Python environment is available, the intended checks are:
 ```text
 python -m django check
 python manage.py makemigrations --check --dry-run
-python manage.py test
+python manage.py test drops.tests
 python -m ruff check .
 ```
 

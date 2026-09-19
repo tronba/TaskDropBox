@@ -294,7 +294,7 @@ export HOME="$DATA_DIR"
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" migrate --noinput
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" collectstatic --noinput
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" check
-runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" test --noinput
+runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" test drops.tests --noinput
 runuser -u www-data -- test ! -r "$DATA_DIR/db.sqlite3" || \
   fail "The Nginx account can read the private TaskDropBox database."
 chown -R root:root "$APP_DIR/staticfiles"
