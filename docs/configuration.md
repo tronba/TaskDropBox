@@ -2,21 +2,39 @@
 
 Production configuration is stored in `/etc/taskdropbox/taskdropbox.env`, owned by `root:taskdropbox` with mode `0640`. Never commit this file.
 
-Use the installer to reconfigure supported settings:
+Use the SSH-only administration command:
 
 ```text
-sudo bash install.sh --reconfigure
+sudo taskdropbox-admin help
 ```
 
-The installer backs up the previous environment file before replacing it and preserves `/var/lib/taskdropbox`.
-
-To generate a replacement creator-PIN hash without placing the PIN in shell history:
+Common operations include:
 
 ```text
-sudo taskdropbox-manage create_creator_pin_hash
+sudo taskdropbox-admin status
+sudo taskdropbox-admin doctor
+sudo taskdropbox-admin set-pin
+sudo taskdropbox-admin set-language en
+sudo taskdropbox-admin set-language nb
+sudo taskdropbox-admin configure
+sudo taskdropbox-admin list-tasks
+sudo taskdropbox-admin delete-task TASK-UUID
+sudo taskdropbox-admin close-all
+sudo taskdropbox-admin revoke-sessions
+sudo taskdropbox-admin flush-data
 ```
 
-Place the resulting hash in `TASKDROPBOX_CREATOR_PIN_HASH`, restart `taskdropbox.service`, and protect the environment file. Changing the hash invalidates existing creator sessions. It does not affect task-specific student or administration keys.
+The installer and all SSH administration prompts remain in English. `set-language` changes the default web-interface language for browsers that have not made their own choice. A pupil or teacher can override the default with the language control in the page header; that preference remains in that browser only.
+
+The configuration command uses the installer to change supported settings:
+
+```text
+sudo taskdropbox-admin configure
+```
+
+Configuration is preserved when application data is flushed. `flush-data` permanently removes all tasks, submissions, uploaded files, and browser sessions after requiring the exact confirmation phrase. It does not make a recovery copy.
+
+Changing the creator PIN invalidates existing creator sessions. It does not affect task-specific student or administration keys.
 
 After any change:
 

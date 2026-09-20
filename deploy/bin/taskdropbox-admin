@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ENV_FILE="/etc/taskdropbox/taskdropbox.env"
+APP_DIR="/opt/taskdropbox"
+
+[[ $EUID -eq 0 ]] || { echo "Run with sudo." >&2; exit 1; }
+[[ -r "$ENV_FILE" ]] || { echo "TaskDropBox configuration is missing." >&2; exit 1; }
+
+usage() {
+  cat <<'EOF'
+TaskDropBox SSH administration
+
+Usage: sudo taskdropbox-admin COMMAND [arguments]
+
+  status                       Show service and application status
+  doctor                       Check services, configuration, database, and storage
+  set-pin                      Replace the six-digit creator PIN
+  set-language en|nb           Set the default web interface language
+  configure                    Reconfigure system settings using the English installer
+  list-tasks                   List tasks without pupil data or private keys
+  delete-task UUID             Permanently delete one task after confirmation
+  close-all                    Close every open task after confirmation
+  revoke-sessions              Sign every browser out
+  flush-data                   Permanently erase all live data after confirmation
+  check-storage [--checksums]  Check private-file consistency
+  checkpoint-database          Truncate the SQLite write-ahead log
+  help                         Show this help
+EOF
+}
+
+replace_setting() {
+  local key="$1" value="$2" temporary
+  temporary="$(mktemp)"
+  sed "s|^${key}=.*$|${key}='${value}'|" "$ENV_FILE" > "$temporary"
+  grep -q "^${key}=" "$temporary" || printf "%s='%s'\n" "$key" "$value" >> "$temporary"
+  install -o root -g taskdropbox -m 0640 "$temporary" "$ENV_FILE"
+  rm -f "$temporary"
+}
+
+command="${1:-help}"
+shift || true
+
+case "$command" in
+  help|-h|--help)
+    usage
+    ;;
+  status)
+    systemctl --no-pager --full status taskdropbox.service nginx.service || true
+    taskdropbox-manage show_status
+    ;;
+  doctor)
+    systemctl is-active --quiet taskdropbox.service
+    systemctl is-active --quiet nginx.service
+    nginx -t
+    taskdropbox-manage check
+    taskdropbox-manage show_status
+    taskdropbox-manage check_storage --checksums
+    echo "TaskDropBox checks passed."
+    ;;
+  set-pin)
+    new_hash="$(taskdropbox-manage create_creator_pin_hash)"
+    replace_setting TASKDROPBOX_CREATOR_PIN_HASH "$new_hash"
+    systemctl restart taskdropbox.service
+    echo "Creator PIN replaced. Existing creator sessions are no longer valid."
+    ;;
+  set-language)
+    language="${1:-}"
+    [[ "$language" == "en" || "$language" == "nb" ]] || {
+      echo "Language must be 'en' or 'nb'." >&2
+      exit 2
+    }
+    replace_setting TASKDROPBOX_LANGUAGE "$language"
+    systemctl restart taskdropbox.service
+    echo "Default web interface language set to ${language}. Existing pupil choices are unchanged."
+    ;;
+  configure)
+    exec "$APP_DIR/install.sh" --reconfigure
+    ;;
+  list-tasks)
+    exec taskdropbox-manage list_tasks "$@"
+    ;;
+  delete-task)
+    [[ $# -eq 1 ]] || { echo "Usage: sudo taskdropbox-admin delete-task UUID" >&2; exit 2; }
+    exec taskdropbox-manage delete_task "$1"
+    ;;
+  close-all)
+    exec taskdropbox-manage close_all
+    ;;
+  revoke-sessions)
+    exec taskdropbox-manage revoke_sessions
+    ;;
+  flush-data)
+    systemctl stop taskdropbox.service
+    trap 'systemctl start taskdropbox.service' EXIT
+    set +e
+    taskdropbox-manage flush_data
+    result=$?
+    set -e
+    trap - EXIT
+    systemctl start taskdropbox.service
+    exit "$result"
+    ;;
+  check-storage)
+    exec taskdropbox-manage check_storage "$@"
+    ;;
+  checkpoint-database)
+    exec taskdropbox-manage checkpoint_database
+    ;;
+  *)
+    echo "Unknown command: $command" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

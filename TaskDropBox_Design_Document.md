@@ -26,7 +26,8 @@ There are no teacher or student accounts. A teacher uses one installation-level 
 - A pupil-focused front page opens student tasks; a linked teacher page provides creation and management entry points.
 - Task creation requires a system-wide six-digit PIN configured during installation.
 - Desktop and Chromebook browsers are the primary clients.
-- English-only interface with all source strings translation-ready.
+- English and Norwegian Bokmål web interface. The SSH installer and operator tools remain English.
+- The operator controls the default web language; each browser can override it without an account or server-side pupil profile.
 - Plain-text task instructions and student web answers.
 - No saved drafts or autosave.
 - Optional soft deadline; open tasks accept late work and mark it late.
@@ -40,7 +41,7 @@ There are no teacher or student accounts. A teacher uses one installation-level 
 
 - sanitized rich-text instructions and answers;
 - saved drafts, return links, manual save, autosave, conflict handling, and link rotation;
-- additional gettext translation files and a language selector;
+- additional gettext translation files;
 - an optional open-task directory where teachers may explicitly list selected tasks;
 - optional automatic retention and abandoned-draft cleanup;
 - advanced low-disk policy;
@@ -91,12 +92,14 @@ It does not collect student numbers, email addresses, class membership, analytic
 
 Deleting a submission removes its name, answer, metadata, and files. Deleting a task removes the complete live task: instructions, task attachments, submissions, names, answers, and uploaded files.
 
-Deletion cannot retroactively remove teacher-downloaded ZIP files, external copies, or older backups. Ordinary deletion also cannot promise forensic erasure of physical SSD blocks. Deployment documentation must therefore cover encrypted VM storage, restricted backups, backup expiry, SQLite secure deletion, and WAL checkpointing without describing them as guaranteed physical-media erasure.
+Deletion cannot retroactively remove teacher-downloaded ZIP files or external copies. Ordinary deletion also cannot promise forensic erasure of physical SSD blocks. Deployment documentation must therefore cover export handling, encrypted VM storage, SQLite secure deletion, and WAL checkpointing without describing them as guaranteed physical-media erasure.
 
 ## 5. Trust model
 
-**Operator:** installs, configures, updates, backs up, restores, starts, and stops the VM; fully trusted.  
-**Teacher:** knows the creator PIN and holds task-specific admin links/keys.  
+**Operator:** installs, configures, updates, administers, starts, and stops the VM; fully trusted.
+
+**Teacher:** knows the creator PIN and holds task-specific admin links/keys.
+
 **Student:** holds a delivery link and can view that task and submit, but cannot view submissions.
 
 The isolated LAN is operationally trusted but may contain curious students. Plain HTTP is a deliberate rapid-deployment tradeoff: a person able to intercept or alter LAN traffic may steal links or content. Risk is reduced with a temporary isolated SSID, WPA2/WPA3, a strong temporary Wi-Fi password, no Internet bridge, and shutdown after use.
@@ -223,7 +226,7 @@ taskdropbox/
     installation.md
     standalone-network.md
     configuration.md
-    backup-and-restore.md
+    data-lifecycle.md
     upgrading.md
     privacy.md
     troubleshooting.md
@@ -405,7 +408,7 @@ The separate teacher page contains two clearly separated sections:
 
 Neither entry page lists existing V1 tasks. The teacher page explains that the creation PIN only permits task creation, while every task has its own separate administration secret.
 
-V1 ships only English, but every UI string uses Django gettext from the start. Future translations live in `locale/<language>/LC_MESSAGES/django.po` and compiled `.mo` files. Do not show a language selector until another complete translation is bundled. Teacher and student content is never automatically translated.
+V1 ships English and Norwegian Bokmål using Django gettext. The operator selects the installation-wide default through the SSH administration tool. A language selector in the page header stores an override only in that browser. The installer and SSH tools always use English. Teacher and student content is never automatically translated.
 
 ## 17. Configuration
 
@@ -468,7 +471,7 @@ The root-run installer:
 14. installs/enables Gunicorn and Nginx services;
 15. leaves firewall policy to the operator so an installer cannot accidentally cut off remote administration, and documents the required TCP port;
 16. runs configuration, permission, database, service, and HTTP health checks;
-17. prints URL, server time, paths, backup warning, and next steps.
+17. prints URL, server time, paths, SSH administration command, and next steps.
 
 It is safely rerunnable, detects existing installations, enters an explicit upgrade/reconfigure path, backs up configuration, and never deletes application data during install or upgrade. Secrets use prompts, protected file descriptors, or root-readable files—not command-line arguments.
 
@@ -487,20 +490,21 @@ It is safely rerunnable, detects existing installations, enters an explicit upgr
 
 During an outage: start/import the prepared VM, attach the isolated LAN, verify static IP and clock, and open `http://<server-ip>/`.
 
-## 21. Storage, backup, and maintenance
+## 21. Storage and maintenance
 
 Use SQLite WAL, busy timeout, secure deletion where supported, short transactions, local reliable storage, and 2–4 initially tested Gunicorn workers. Store `/var/lib/taskdropbox/db.sqlite3` and `/var/lib/taskdropbox/files/` together. Below the disk reserve, return HTTP 503 for new writes while preserving reads/admin where possible. Never auto-delete in V1.
 
-Back up the database and files together using SQLite online backup or a brief write stop. Backups require restricted access, encryption where practical, expiry, and restore tests.
+TaskDropBox is temporary emergency infrastructure and does not provide an operational backup workflow. Teachers export required work promptly. The operator flushes live data after the event; no recovery copy is silently retained.
 
-Management commands:
+The root-only `taskdropbox-admin` SSH interface provides:
 
-- `check_storage` — missing/orphaned files and optional checksum verification;
-- `set_creator_pin` — securely prompt twice, store a new PIN hash, and invalidate existing creator sessions;
-- `backup_db` — consistent SQLite backup;
-- `show_status` — version, health, base URL, detected IPs, time/timezone, free space, and counts without secrets/content;
-- `delete_task` — emergency UUID deletion with preview/confirmation;
-- `checkpoint_database` — documented WAL checkpoint/truncation.
+- `status` and `doctor` — version, health, services, base URL, detected IPs, time/timezone, language, free space, storage integrity, and anonymous counts;
+- `set-pin` — securely prompt twice, store a new PIN hash, and invalidate existing creator sessions;
+- `set-language` and `configure` — change the default web language and supported deployment settings;
+- `list-tasks` and `delete-task` — privacy-safe task listing and emergency UUID deletion with preview/confirmation;
+- `close-all` and `revoke-sessions` — stop submissions and invalidate browser authorization;
+- `flush-data` — permanently erase all live application data after an exact typed confirmation while preserving configuration;
+- `check-storage` and `checkpoint-database` — storage integrity and WAL maintenance.
 
 ## 22. Logging and errors
 
@@ -514,7 +518,7 @@ Errors: generic 404 for bad capabilities; 413 for size; 429 for rate; 503 for di
 
 Tests cover token independence, creator-PIN verification/change/session invalidation, global and per-client PIN rate limits, validation, escaping, deadlines and exact boundary, close/reopen, file/archive safety, limits, scoped admin sessions, front-page link/key parsing, CSV formula protection, and deletion failures.
 
-Integration tests cover create → submit → review → export → delete; invalid capabilities; token exchange; cross-task denial; student isolation; authorized downloads; on-time and late submission; overdue-open acceptance; closed rejection; reopen-after-deadline; POST/Redirect/GET duplicate prevention; concurrency; deletion isolation; low-disk rejection; backup/restore; Nginx deployment by IP; clean Ubuntu 26.04 installation; and the full workflow with WAN blocked.
+Integration tests cover create → submit → review → export → delete; invalid capabilities; token exchange; cross-task denial; student isolation; authorized downloads; on-time and late submission; overdue-open acceptance; closed rejection; reopen-after-deadline; POST/Redirect/GET duplicate prevention; concurrency; deletion isolation; low-disk rejection; operator controls; both bundled web languages; Nginx deployment by IP; clean Ubuntu 26.04 installation; and the full workflow with WAN blocked.
 
 Security inputs include traversal, absolute paths, backslashes, HTML/script text, CSV prefixes, duplicates, Unicode, very long values, malformed multipart bodies, archive separators, and truncated tokens.
 
@@ -532,7 +536,7 @@ V1 is accepted when:
 10. upload/rate/disk limits work;
 11. HTML entered as plain text never executes;
 12. submission/task deletion removes the correct live names, content, and files only;
-13. backup restores successfully;
+13. teachers can export required work and the operator can safely flush all live data;
 14. English strings are translation-ready;
 15. desktop/Chromebook core workflows work without JavaScript;
 16. no account, profile, or cross-task identity is created;
@@ -550,15 +554,15 @@ V1 is accepted when:
 8. Implement safe ZIP export and manifest.
 9. Add production limits, disk checks, logging redaction, and security headers.
 10. Add Ubuntu installer, upgrade/reconfigure path, and preserving-data uninstaller.
-11. Add networking, clock, backup/restore, privacy, and troubleshooting docs.
+11. Add networking, clock, export/data-lifecycle, privacy, and troubleshooting docs.
 12. Complete accessibility, security, concurrency, offline, and clean-VM tests.
 
 Each stage leaves tests passing. Authorization, file consistency, deletion, and export safety precede convenience styling.
 
 ## 25. Invariants
 
-An implementation agent must not silently change: the product name or license; accountless model; pupil-focused front page with separate teacher tools; system-wide six-digit creator PIN; self-reported per-submission name; independent hashed capabilities; V1 plain text and no drafts; soft deadline plus separate closing; V1 ZIP export; manual retention and reject-only disk behavior; complete live deletion; English-only translation-ready interface; no V1 QR; desktop/Chromebook priority; Ubuntu 26.04; static-IP HTTP without DNS/certificates; offline runtime; or SQLite/private local files.
+An implementation agent must not silently change: the product name or license; accountless model; pupil-focused front page with separate teacher tools; system-wide six-digit creator PIN; self-reported per-submission name; independent hashed capabilities; V1 plain text and no drafts; soft deadline plus separate closing; V1 ZIP export; manual retention and reject-only disk behavior; complete live deletion; English/Norwegian web interface with English operator tooling; no V1 QR; desktop/Chromebook priority; Ubuntu 26.04; static-IP HTTP without DNS/certificates; offline runtime; or SQLite/private local files.
 
 ## 26. Handoff prompt
 
-> Implement TaskDropBox V1 from this document as a GitHub-ready AGPL-3.0-or-later project. Target Ubuntu Server 26.04 and standalone HTTP at a static private IP without DNS, certificates, cloud services, or runtime Internet. Use Django, SQLite, Gunicorn, Nginx, server-rendered templates, and minimal optional JavaScript. Do not create accounts. Use a pupil-focused front page for opening tasks and a clearly linked teacher page for Create and Manage entry points. Task creation requires a rate-limited system-wide six-digit PIN whose hash is configured during installation and safely replaceable later; changing it invalidates creator sessions. Student and admin access use separate independent hashed capability keys. V1 has plain-text instructions/answers and no drafts. A due date is soft: open tasks accept work and record late state; closing is the hard stop. Implement private file storage, individual downloads, safe ZIP export with UTF-8 web-answer files, original uploaded documents, readable collision-safe names, and CSV manifest. Manual deletion removes all live task content including names and files. Manual retention and low-disk rejection apply in V1. Make UI strings translation-ready but ship only English. Pin dependencies, test authorization and security boundaries, and provide an idempotent installer that updates a preparation-time Ubuntu VM, safely handles reboot requirements, and leaves all runtime workflows functional with WAN blocked. Do not add rich text, drafts, automatic retention, QR codes, telemetry, external assets, or online services to V1.
+> Implement TaskDropBox V1 from this document as a GitHub-ready AGPL-3.0-or-later project. Target Ubuntu Server 26.04 and standalone HTTP at a static private IP without DNS, certificates, cloud services, or runtime Internet. Use Django, SQLite, Gunicorn, Nginx, server-rendered templates, and minimal optional JavaScript. Do not create accounts. Use a pupil-focused front page for opening tasks and a clearly linked teacher page for Create and Manage entry points. Task creation requires a rate-limited system-wide six-digit PIN whose hash is configured during installation and safely replaceable later; changing it invalidates creator sessions. Student and admin access use separate independent hashed capability keys. V1 has plain-text instructions/answers and no drafts. A due date is soft: open tasks accept work and record late state; closing is the hard stop. Implement private file storage, individual downloads, safe ZIP export with UTF-8 web-answer files, original uploaded documents, readable collision-safe names, and CSV manifest. Manual deletion removes all live task content including names and files. Manual retention and low-disk rejection apply in V1. Ship English and Norwegian Bokmål web interfaces with an SSH-controlled default and a browser-local selector; keep installation and SSH administration English. Pin dependencies, test authorization and security boundaries, and provide an idempotent installer that updates a preparation-time Ubuntu VM, safely handles reboot requirements, and leaves all runtime workflows functional with WAN blocked. Do not add rich text, drafts, automatic retention, QR codes, telemetry, external assets, or online services to V1.

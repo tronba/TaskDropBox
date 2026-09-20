@@ -43,7 +43,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "drops.middleware.CorrelationIdMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
+    "drops.middleware.DefaultLanguageMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -61,6 +61,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.i18n",
             ]
         },
     }
@@ -75,7 +76,11 @@ DATABASES = {
     }
 }
 
-LANGUAGE_CODE = "en"
+LANGUAGE_CODE = os.environ.get("TASKDROPBOX_LANGUAGE", "en")
+LANGUAGES = [
+    ("en", "English"),
+    ("nb", "Norsk bokmål"),
+]
 USE_I18N = True
 USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / "locale"]

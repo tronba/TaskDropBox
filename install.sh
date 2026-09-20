@@ -66,12 +66,14 @@ fi
 if [[ -f "$ENV_FILE" ]]; then
   CURRENT_BASE_URL="$(sed -n "s/^TASKDROPBOX_BASE_URL='\(.*\)'$/\1/p" "$ENV_FILE")"
   CURRENT_TIME_ZONE="$(sed -n "s/^TASKDROPBOX_TIME_ZONE='\(.*\)'$/\1/p" "$ENV_FILE")"
+  CURRENT_LANGUAGE="$(sed -n "s/^TASKDROPBOX_LANGUAGE='\(.*\)'$/\1/p" "$ENV_FILE")"
   CURRENT_MAX_FILE_MIB="$(sed -n "s/^TASKDROPBOX_MAX_FILE_MIB='\(.*\)'$/\1/p" "$ENV_FILE")"
   CURRENT_MAX_SUBMISSION_MIB="$(sed -n "s/^TASKDROPBOX_MAX_SUBMISSION_MIB='\(.*\)'$/\1/p" "$ENV_FILE")"
   CURRENT_MIN_FREE_MIB="$(sed -n "s/^TASKDROPBOX_MIN_FREE_DISK_MIB='\(.*\)'$/\1/p" "$ENV_FILE")"
 else
   CURRENT_BASE_URL=""
   CURRENT_TIME_ZONE=""
+  CURRENT_LANGUAGE="en"
   CURRENT_MAX_FILE_MIB=""
   CURRENT_MAX_SUBMISSION_MIB=""
   CURRENT_MIN_FREE_MIB=""
@@ -179,7 +181,7 @@ if [[ $SKIP_OS_UPDATES -eq 0 ]]; then
   fi
 fi
 
-apt-get install -y python3 python3-venv python3-pip nginx rsync curl sqlite3
+apt-get install -y python3 python3-venv python3-pip nginx rsync curl sqlite3 gettext
 timedatectl set-timezone "$TIME_ZONE"
 systemctl disable --now chrony.service 2>/dev/null || true
 systemctl disable --now systemd-timesyncd.service 2>/dev/null || true
@@ -196,15 +198,6 @@ install -d -o taskdropbox -g taskdropbox -m 0750 "$DATA_DIR" "$DATA_DIR/files"
 if systemctl is-active --quiet taskdropbox.service; then
   systemctl stop taskdropbox.service
   echo "Stopped the existing TaskDropBox service for a consistent upgrade."
-fi
-
-if [[ "$MODE" == "upgrade" && -f "$DATA_DIR/db.sqlite3" ]]; then
-  install -d -o taskdropbox -g taskdropbox -m 0750 "$DATA_DIR/backups"
-  PRE_UPGRADE_BACKUP="$DATA_DIR/backups/pre-upgrade-$(date -u +%Y%m%dT%H%M%SZ).sqlite3"
-  sqlite3 "$DATA_DIR/db.sqlite3" ".backup '${PRE_UPGRADE_BACKUP}'"
-  chown taskdropbox:taskdropbox "$PRE_UPGRADE_BACKUP"
-  chmod 0640 "$PRE_UPGRADE_BACKUP"
-  echo "Created pre-upgrade database backup: ${PRE_UPGRADE_BACKUP}"
 fi
 
 if [[ -f "$ENV_FILE" ]]; then
@@ -262,6 +255,7 @@ TASKDROPBOX_CREATOR_PIN_HASH='${PIN_HASH}'
 TASKDROPBOX_ALLOWED_HOSTS='${ALLOWED_HOST}'
 TASKDROPBOX_BASE_URL='${BASE_URL}'
 TASKDROPBOX_TIME_ZONE='${TIME_ZONE}'
+TASKDROPBOX_LANGUAGE='${CURRENT_LANGUAGE:-en}'
 TASKDROPBOX_DATA_DIR='${DATA_DIR}'
 TASKDROPBOX_MAX_TASK_ATTACHMENTS='10'
 TASKDROPBOX_MAX_FILE_MIB='${MAX_FILE_MIB}'
@@ -281,6 +275,7 @@ runuser -u www-data -- test ! -r "$ENV_FILE" || \
 
 install -m 0644 "$APP_DIR/deploy/systemd/taskdropbox.service.template" /etc/systemd/system/taskdropbox.service
 install -o root -g root -m 0755 "$APP_DIR/deploy/bin/taskdropbox-manage" /usr/local/sbin/taskdropbox-manage
+install -o root -g root -m 0755 "$APP_DIR/deploy/bin/taskdropbox-admin" /usr/local/sbin/taskdropbox-admin
 sed "s/__REQUEST_MIB__/${REQUEST_MIB}/g" "$APP_DIR/deploy/nginx/taskdropbox.conf.template" \
   > /etc/nginx/sites-available/taskdropbox
 ln -sfn /etc/nginx/sites-available/taskdropbox /etc/nginx/sites-enabled/taskdropbox
@@ -292,6 +287,7 @@ source "$ENV_FILE"
 set +a
 export HOME="$DATA_DIR"
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" migrate --noinput
+"$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" compilemessages --locale nb
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" collectstatic --noinput
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" check
 runuser -u taskdropbox --preserve-environment -- "$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" test drops.tests --noinput
@@ -314,5 +310,4 @@ echo "TaskDropBox is ready at ${BASE_URL}"
 echo "Verify server time: $(date --iso-8601=seconds) (${TIME_ZONE})"
 echo "Configuration: ${ENV_FILE}"
 echo "Persistent data: ${DATA_DIR}"
-echo "Status command: sudo taskdropbox-manage show_status"
-echo "Back up the database and files together."
+echo "Administration: sudo taskdropbox-admin help"

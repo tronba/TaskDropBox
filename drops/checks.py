@@ -33,4 +33,12 @@ def taskdropbox_settings_check(app_configs, **kwargs):
         issues.append(Error("Upload size settings are inconsistent.", id="taskdropbox.E003"))
     if settings.MIN_FREE_DISK_BYTES < 0:
         issues.append(Error("Disk reserve cannot be negative.", id="taskdropbox.E004"))
+    supported_languages = {code for code, _ in settings.LANGUAGES}
+    if settings.LANGUAGE_CODE not in supported_languages:
+        issues.append(
+            Error(
+                "TASKDROPBOX_LANGUAGE must name a bundled web-interface language.",
+                id="taskdropbox.E007",
+            )
+        )
     return issues

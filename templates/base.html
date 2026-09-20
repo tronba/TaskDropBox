@@ -1,5 +1,5 @@
-{% load static i18n %}<!doctype html>
-<html lang="en">
+{% load static i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!doctype html>
+<html lang="{{ CURRENT_LANGUAGE }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +8,26 @@
   <script src="{% static 'taskdropbox.js' %}" defer></script>
 </head>
 <body>
-  <header class="site-header"><a href="{% url 'home' %}">TaskDropBox</a></header>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-brand" href="{% url 'home' %}">TaskDropBox</a>
+      <nav class="header-actions" aria-label="{% translate 'Site tools' %}">
+        {% block header_actions %}{% endblock %}
+        <form class="language-switcher" method="post" action="{% url 'set_language' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <label for="language-select">{% translate "Language" %}</label>
+          <select id="language-select" name="language">
+            {% get_available_languages as AVAILABLE_LANGUAGES %}
+            {% for code, name in AVAILABLE_LANGUAGES %}
+              <option value="{{ code }}"{% if code == CURRENT_LANGUAGE %} selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit">{% translate "Change" %}</button>
+        </form>
+      </nav>
+    </div>
+  </header>
   <main class="container">
     {% if messages %}
       <div aria-live="polite">
@@ -18,7 +37,7 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="site-footer">
-    <p>TaskDropBox — AGPL-3.0-or-later, provided without warranty. <a href="{% url 'source_archive' %}">{% translate "Download the installed source code" %}</a>.</p>
+    <p>{% blocktranslate %}TaskDropBox — AGPL-3.0-or-later, provided without warranty.{% endblocktranslate %} <a href="{% url 'source_archive' %}">{% translate "Download the installed source code" %}</a>.</p>
   </footer>
 </body>
 </html>

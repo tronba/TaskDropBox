@@ -1,5 +1,6 @@
 {% extends "base.html" %}{% load i18n %}
 {% block title %}{% translate "TaskDropBox — local assignment hand-in" %}{% endblock %}
+{% block header_actions %}<a class="teacher-header-link" href="{% url 'teacher_home' %}">{% translate "Teacher tools" %}</a>{% endblock %}
 {% block content %}
 <h1>{% translate "Hand in your work" %}</h1>
 <p>{% translate "Open the task your teacher gave you." %}</p>
@@ -12,6 +13,5 @@
       <button type="submit">{% translate "Open task" %}</button>
     </form>
   </section>
-  <p class="teacher-entry">{% translate "Are you a teacher?" %} <a href="{% url 'teacher_home' %}">{% translate "Open teacher tools" %}</a>.</p>
 </div>
 {% endblock %}

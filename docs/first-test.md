@@ -40,8 +40,8 @@ Do not continue if the embedded Django tests fail.
 
 ```text
 sudo systemctl status taskdropbox nginx --no-pager
-sudo taskdropbox-manage show_status
-sudo taskdropbox-manage check_storage --checksums
+sudo taskdropbox-admin status
+sudo taskdropbox-admin check-storage --checksums
 curl --fail http://127.0.0.1/healthz
 ```
 
@@ -96,21 +96,18 @@ From a second computer, open the static-IP URL.
 ## 6. Delete and storage verification
 
 1. Delete one submission and confirm its text, name, and files disappear while other work remains.
-2. Run `sudo taskdropbox-manage check_storage --checksums`; expect no errors.
+2. Run `sudo taskdropbox-admin check-storage --checksums`; expect no errors.
 3. Delete the complete task and confirm its student/admin/receipt links return generic 404 pages.
 4. Run storage checking again; expect no missing or orphaned files.
 
-## 7. Backup and restore
+## 7. SSH administration and language
 
-Create a test task, then:
-
-```text
-sudo install -d -m 0700 /root/taskdropbox-test-backup
-sudo taskdropbox-manage backup_db /root/taskdropbox-test-backup/db.sqlite3
-sudo cp -a /var/lib/taskdropbox/files /root/taskdropbox-test-backup/files
-```
-
-Verify that the database backup exists and is not empty. Full restore validation can use a second disposable VM after the first installation test passes.
+1. Run `sudo taskdropbox-admin status` and `sudo taskdropbox-admin doctor`.
+2. Run `sudo taskdropbox-admin set-language nb`, open a new private browser window, and confirm the web interface defaults to Norwegian Bokmål.
+3. Change that browser to English using the page header and confirm the selection follows the browser through the pupil workflow.
+4. Run `sudo taskdropbox-admin set-language en` and confirm a different new private browser defaults to English.
+5. Test `list-tasks`, `close-all`, `revoke-sessions`, and `delete-task` with disposable tasks.
+6. Export all work that must be retained, then test `flush-data`. Confirm all task links stop working and the configuration remains intact.
 
 ## 8. Offline operation
 
@@ -131,7 +128,7 @@ sudo bash install.sh --reconfigure
 
 Change the creator PIN. Confirm the old PIN and any old creator session stop working, while task-specific links still work.
 
-Run `--upgrade` from the same source as an idempotence test. Confirm a pre-upgrade database backup appears under `/var/lib/taskdropbox/backups/`, all tests pass, and existing tasks remain.
+Run `--upgrade` from the same source as an idempotence test. Confirm all tests pass and existing tasks remain. Operational upgrades should occur before an emergency or after teachers have exported required work.
 
 ## 10. Uninstall preservation
 

@@ -48,6 +48,7 @@ class TaskCreateForm(forms.ModelForm):
         model = Task
         fields = ["title", "instructions_text", "due_at", "allow_text", "allow_files"]
         labels = {
+            "title": _("Title"),
             "instructions_text": _("Instructions"),
             "allow_text": _("Allow answers written in TaskDropBox"),
             "allow_files": _("Allow file attachments"),

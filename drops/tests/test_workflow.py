@@ -44,6 +44,29 @@ class WorkflowTests(TestCase):
         self.assertNotContains(response, "Create a task")
         self.assertNotContains(response, "Manage a task")
 
+    def test_front_page_has_teacher_link_in_header_and_language_switcher(self):
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, 'class="teacher-header-link"')
+        self.assertContains(response, reverse("set_language"))
+        self.assertContains(response, 'value="nb"')
+
+    def test_pupil_can_change_language_for_their_browser(self):
+        response = self.client.post(
+            reverse("set_language"),
+            {"language": "nb", "next": reverse("home")},
+        )
+        self.assertRedirects(response, reverse("home"))
+        self.assertEqual(response.cookies["django_language"].value, "nb")
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.headers["Content-Language"], "nb")
+        self.assertContains(response, '<html lang="nb">')
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_operator_default_wins_until_browser_selects_language(self):
+        response = self.client.get(reverse("home"), HTTP_ACCEPT_LANGUAGE="nb")
+        self.assertEqual(response.headers["Content-Language"], "en")
+        self.assertContains(response, '<html lang="en">')
+
     def test_teacher_page_contains_creation_and_management_entry_points(self):
         response = self.client.get(reverse("teacher_home"))
         self.assertContains(response, "Teacher tools")

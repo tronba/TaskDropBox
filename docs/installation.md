@@ -30,6 +30,7 @@ The installer creates:
 /var/lib/taskdropbox/files
 /etc/systemd/system/taskdropbox.service
 /etc/nginx/sites-available/taskdropbox
+/usr/local/sbin/taskdropbox-admin
 ```
 
 ## Unattended installation
@@ -47,7 +48,7 @@ The PIN file must contain exactly six digits. Delete the plaintext PIN file afte
 ## Verification
 
 1. Run `sudo systemctl status taskdropbox nginx`.
-2. Run the status command from the installed environment.
+2. Run `sudo taskdropbox-admin doctor`.
 3. Open `http://<static-ip>/` from another computer on the isolated LAN.
 4. Create a disposable task, submit text and a file, export it, and delete it.
 5. Block WAN access and repeat the workflow.

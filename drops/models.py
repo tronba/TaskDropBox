@@ -2,12 +2,13 @@ import uuid
 
 from django.core.validators import MaxLengthValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class Task(models.Model):
     class Status(models.TextChoices):
-        OPEN = "open", "Open"
-        CLOSED = "closed", "Closed"
+        OPEN = "open", _("Open")
+        CLOSED = "closed", _("Closed")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)

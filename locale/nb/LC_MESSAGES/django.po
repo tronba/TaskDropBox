@@ -1,0 +1,326 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: TaskDropBox 0.1.0\n"
+"Language: nb\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "TaskDropBox — local assignment hand-in"
+msgstr "TaskDropBox — lokal innlevering"
+
+msgid "Site tools"
+msgstr "Nettstedsverktøy"
+
+msgid "Language"
+msgstr "Språk"
+
+msgid "Change"
+msgstr "Bytt"
+
+msgid "Teacher tools"
+msgstr "Lærerverktøy"
+
+msgid "Hand in your work"
+msgstr "Lever arbeidet ditt"
+
+msgid "Open the task your teacher gave you."
+msgstr "Åpne oppgaven du fikk av læreren din."
+
+msgid "Open a task"
+msgstr "Åpne en oppgave"
+
+msgid "Paste the student task link or key supplied by your teacher."
+msgstr "Lim inn elevlenken eller nøkkelen du fikk av læreren."
+
+msgid "Open task"
+msgstr "Åpne oppgave"
+
+msgid "Task link or key"
+msgstr "Oppgavelenke eller nøkkel"
+
+msgid "Teacher tools — TaskDropBox"
+msgstr "Lærerverktøy — TaskDropBox"
+
+msgid "Create a new task or open an existing task's private management page."
+msgstr "Opprett en ny oppgave eller åpne den private administrasjonssiden for en eksisterende oppgave."
+
+msgid "Create a task"
+msgstr "Opprett en oppgave"
+
+msgid "Enter the school's six-digit creator PIN."
+msgstr "Skriv inn skolens sekssifrede opprettelses-PIN."
+
+msgid "Creator PIN"
+msgstr "Opprettelses-PIN"
+
+msgid "Continue"
+msgstr "Fortsett"
+
+msgid "Manage a task"
+msgstr "Administrer en oppgave"
+
+msgid "Paste the task's private teacher link or administration key."
+msgstr "Lim inn oppgavens private lærerlenke eller administrasjonsnøkkel."
+
+msgid "Manage task"
+msgstr "Administrer oppgave"
+
+msgid "Return to pupil hand-in"
+msgstr "Tilbake til elevinnlevering"
+
+msgid "Enter the six-digit creator PIN."
+msgstr "Skriv inn den sekssifrede opprettelses-PIN-en."
+
+msgid "The creator PIN was not accepted."
+msgstr "Opprettelses-PIN-en ble ikke godkjent."
+
+msgid "Title"
+msgstr "Tittel"
+
+msgid "Instructions"
+msgstr "Instruksjoner"
+
+msgid "Due date and time"
+msgstr "Fristdato og -tid"
+
+msgid "Allow answers written in TaskDropBox"
+msgstr "Tillat svar skrevet i TaskDropBox"
+
+msgid "Allow file attachments"
+msgstr "Tillat filvedlegg"
+
+msgid "Task attachments"
+msgstr "Oppgavevedlegg"
+
+msgid "Create task"
+msgstr "Opprett oppgave"
+
+msgid "Task created"
+msgstr "Oppgaven er opprettet"
+
+msgid "Save the teacher link now."
+msgstr "Lagre lærerlenken nå."
+
+msgid "TaskDropBox cannot recover it through the normal interface. Save or print both links before leaving or refreshing this page."
+msgstr "TaskDropBox kan ikke finne den igjen gjennom det vanlige grensesnittet. Lagre eller skriv ut begge lenkene før du forlater eller oppdaterer siden."
+
+msgid "Student link"
+msgstr "Elevlenke"
+
+msgid "Readable student key"
+msgstr "Lesbar elevnøkkel"
+
+msgid "Private teacher link"
+msgstr "Privat lærerlenke"
+
+msgid "Print this page"
+msgstr "Skriv ut denne siden"
+
+msgid "Your name"
+msgstr "Navnet ditt"
+
+msgid "Written answer"
+msgstr "Skriftlig svar"
+
+msgid "Attachments"
+msgstr "Vedlegg"
+
+msgid "Due:"
+msgstr "Frist:"
+
+msgid "This task is closed and no longer accepts work."
+msgstr "Denne oppgaven er stengt og tar ikke lenger imot arbeid."
+
+msgid "The due time has passed. You may still submit, but your work will be marked late."
+msgstr "Fristen er passert. Du kan fortsatt levere, men arbeidet blir merket som forsinket."
+
+msgid "TaskDropBox does not save drafts in this version. Submit before closing this page."
+msgstr "TaskDropBox lagrer ikke utkast i denne versjonen. Lever før du lukker siden."
+
+msgid "Submit your work"
+msgstr "Lever arbeidet ditt"
+
+msgid "Submit answer"
+msgstr "Lever svar"
+
+msgid "Submission received"
+msgstr "Innleveringen er mottatt"
+
+msgid "Task"
+msgstr "Oppgave"
+
+msgid "Name"
+msgstr "Navn"
+
+msgid "Received"
+msgstr "Mottatt"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Status:"
+msgstr "Status:"
+
+msgid "Receipt"
+msgstr "Kvittering"
+
+msgid "Late"
+msgstr "Forsinket"
+
+msgid "On time"
+msgstr "I tide"
+
+msgid "Accepted files"
+msgstr "Mottatte filer"
+
+msgid "Open"
+msgstr "Åpen"
+
+msgid "Closed"
+msgstr "Stengt"
+
+msgid "Close task"
+msgstr "Steng oppgave"
+
+msgid "Reopen task"
+msgstr "Åpne oppgaven igjen"
+
+msgid "Export all submissions as ZIP"
+msgstr "Eksporter alle innleveringer som ZIP"
+
+msgid "Submissions"
+msgstr "Innleveringer"
+
+msgid "Delete this submission"
+msgstr "Slett denne innleveringen"
+
+msgid "No submissions yet."
+msgstr "Ingen innleveringer ennå."
+
+msgid "Submission pages"
+msgstr "Innleveringssider"
+
+msgid "Previous"
+msgstr "Forrige"
+
+msgid "Next"
+msgstr "Neste"
+
+msgid "Page %(current)s of %(total)s"
+msgstr "Side %(current)s av %(total)s"
+
+msgid "Delete this task and all submissions"
+msgstr "Slett denne oppgaven og alle innleveringer"
+
+msgid "Delete submission"
+msgstr "Slett innlevering"
+
+msgid "Permanently delete the submission from %(name)s for “%(task)s”?"
+msgstr "Vil du slette innleveringen fra %(name)s til «%(task)s» permanent?"
+
+msgid "The name, written answer, metadata, and uploaded files will be removed from the live server."
+msgstr "Navnet, det skriftlige svaret, metadata og opplastede filer blir fjernet fra den aktive serveren."
+
+msgid "Yes, delete submission"
+msgstr "Ja, slett innleveringen"
+
+msgid "Delete task"
+msgstr "Slett oppgave"
+
+msgid "Permanently delete “%(task)s” and every submission?"
+msgstr "Vil du slette «%(task)s» og alle innleveringer permanent?"
+
+msgid "This removes all live instructions, names, answers, attachments, and uploaded files. This cannot be undone through TaskDropBox."
+msgstr "Dette fjerner alle aktive instruksjoner, navn, svar, vedlegg og opplastede filer. Handlingen kan ikke angres i TaskDropBox."
+
+msgid "Yes, delete task and everything in it"
+msgstr "Ja, slett oppgaven og alt innholdet"
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Please correct the following"
+msgstr "Rett opp følgende"
+
+msgid "Write an answer or attach at least one file."
+msgstr "Skriv et svar eller legg ved minst én fil."
+
+msgid "Enter your name."
+msgstr "Skriv inn navnet ditt."
+
+msgid "Too many attached files."
+msgstr "For mange vedlagte filer."
+
+msgid "An attached file is too large."
+msgstr "En vedlagt fil er for stor."
+
+msgid "The combined attachments are too large."
+msgstr "Vedleggene er for store til sammen."
+
+msgid "Enable at least one answer type."
+msgstr "Aktiver minst én svartype."
+
+msgid "Too many task attachments."
+msgstr "For mange oppgavevedlegg."
+
+msgid "A task attachment is too large."
+msgstr "Et oppgavevedlegg er for stort."
+
+msgid "Please wait"
+msgstr "Vent litt"
+
+msgid "Too many creator PIN attempts were made. Task creation is temporarily locked. Existing tasks and submissions are unaffected."
+msgstr "Det er gjort for mange forsøk med opprettelses-PIN. Oppretting av oppgaver er midlertidig låst. Eksisterende oppgaver og innleveringer påvirkes ikke."
+
+msgid "Storage temporarily unavailable"
+msgstr "Lagring er midlertidig utilgjengelig"
+
+msgid "TaskDropBox is preserving its disk-space reserve and cannot accept new content. Existing work has not been deleted. Please contact the operator."
+msgstr "TaskDropBox beskytter reservert diskplass og kan ikke ta imot nytt innhold. Eksisterende arbeid er ikke slettet. Kontakt driftsansvarlig."
+
+msgid "This task was closed before your submission could be accepted."
+msgstr "Oppgaven ble stengt før innleveringen kunne mottas."
+
+msgid "Page not found"
+msgstr "Siden ble ikke funnet"
+
+msgid "The link is invalid, expired, deleted, or unavailable."
+msgstr "Lenken er ugyldig, utløpt, slettet eller utilgjengelig."
+
+msgid "Return to TaskDropBox"
+msgstr "Tilbake til TaskDropBox"
+
+msgid "Something went wrong"
+msgstr "Noe gikk galt"
+
+msgid "The request could not be completed. No success receipt was created."
+msgstr "Forespørselen kunne ikke fullføres. Ingen kvittering ble opprettet."
+
+msgid "Reference:"
+msgstr "Referanse:"
+
+msgid "unavailable"
+msgstr "utilgjengelig"
+
+msgid "Download the installed source code"
+msgstr "Last ned den installerte kildekoden"
+
+msgid "TaskDropBox — AGPL-3.0-or-later, provided without warranty."
+msgstr "TaskDropBox — AGPL-3.0-or-later, leveres uten garanti."
+
+msgid "That student task link or key was not accepted."
+msgstr "Elevlenken eller nøkkelen ble ikke godkjent."
+
+msgid "That teacher task link or key was not accepted."
+msgstr "Lærerlenken eller administrasjonsnøkkelen ble ikke godkjent."
+
+msgid "This creation form was already used or has expired."
+msgstr "Dette opprettelsesskjemaet er allerede brukt eller har utløpt."
+
+msgid "One or more attachments exceeded the upload limits."
+msgstr "Ett eller flere vedlegg overskred opplastingsgrensene."
+
+msgid "The task and all of its live content were deleted."
+msgstr "Oppgaven og alt aktivt innhold ble slettet."

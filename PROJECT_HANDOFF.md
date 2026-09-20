@@ -20,7 +20,7 @@ The project directory may be moved or renamed. Runtime paths on Ubuntu are fixed
 
 - Product name: **TaskDropBox**.
 - License: GNU Affero General Public License v3.0 or later.
-- English-only V1, with Django translation-ready UI strings.
+- English and Norwegian Bokmål web interface, with an SSH-controlled default and a browser-local selector. Installer and operator tools remain English.
 - No student or teacher accounts.
 - The front page is pupil-focused and opens student tasks; a linked teacher page provides task creation and management.
 - Creating tasks requires one system-wide six-digit PIN. Only its password hash is stored.
@@ -32,7 +32,7 @@ The project directory may be moved or renamed. Runtime paths on Ubuntu are fixed
 - Closing a task is the hard submission stop. Teachers can reopen it.
 - Teachers can review submissions, download files, export all work as ZIP, delete individual submissions, and delete complete tasks.
 - ZIP exports contain a CSV manifest, UTF-8 text files for web answers, and original uploaded content with safe readable names.
-- Complete task deletion removes its live database content and files. Backups and previously downloaded exports remain separate operator responsibilities.
+- Complete task deletion removes its live database content and files. Previously downloaded exports remain separate operator responsibilities.
 - No automatic retention or automatic content deletion.
 - Low disk space rejects new writes rather than deleting existing work.
 - Desktop and Chromebook use is the priority. QR codes are deferred until V2 or V3.
@@ -64,7 +64,7 @@ Important source locations:
 - `templates/` and `static/` — completely local interface assets.
 - `deploy/` — systemd, Nginx, and management-wrapper templates.
 - `install.sh` and `uninstall.sh` — Ubuntu deployment lifecycle.
-- `docs/` — installation, networking, configuration, privacy, backup, upgrade, troubleshooting, and first-test instructions.
+- `docs/` — installation, networking, configuration, privacy, upgrade, troubleshooting, and first-test instructions.
 - `.github/workflows/tests.yml` — Python/Django matrix tests and an Ubuntu 26.04 installer test.
 
 ## Ubuntu installation behavior
@@ -87,18 +87,18 @@ The installer:
 12. checks Nginx configuration and private-file permissions;
 13. enables services and performs an HTTP health check.
 
-`--upgrade` preserves data, configuration values, and a pre-upgrade SQLite backup. `--reconfigure` changes supported settings without replacing the installed source. `uninstall.sh` removes services and application code but deliberately preserves configuration and user data.
+`--upgrade` preserves data and configuration values. `--reconfigure` changes supported settings without replacing the installed source. `uninstall.sh` removes services and application code but deliberately preserves configuration and user data.
 
 ## Validation completed on the coding machine
 
-- All 37 Python files parse and compile.
+- All Python files parse and compile.
 - `pyproject.toml` parses and contains the expected project name and AGPL identifier.
 - All shell scripts pass Bash syntax checking.
 - Shell files have LF endings and `.gitattributes` enforces Linux line endings after Git checkout.
 - Local Markdown links resolve.
 - Browser templates, CSS, and JavaScript contain no remote asset URLs.
 - The complete GNU AGPLv3 license text is present.
-- There are 28 automated test cases in the repository.
+- The automated test count changes as V1 is completed; use test discovery rather than this document as the source of truth.
 
 The full Django test suite, Ruff, migrations check, Nginx validation, systemd service startup, permissions checks, and HTTP workflow have **not** been executed locally. They require the GitHub Actions environment or the target Ubuntu VM.
 
@@ -123,14 +123,16 @@ Pay particular attention to:
 - close/reopen behavior;
 - task-authorization isolation between browsers and tasks;
 - authorized downloads and ZIP contents;
-- deletion followed by `sudo taskdropbox-manage check_storage --checksums`;
+- deletion followed by `sudo taskdropbox-admin check-storage --checksums`;
+- English/Norwegian selection and the SSH-controlled default language;
+- SSH status, PIN, task, session, and destructive data controls;
 - operation after WAN access is blocked;
 - `/source/` availability while offline;
 - `--reconfigure`, `--upgrade`, and preserving-data uninstall behavior.
 
 ## Safety and privacy boundaries
 
-- Never commit the production environment file, database, uploads, creator PIN, capability links, exports, or backups.
+- Never commit the production environment file, database, uploads, creator PIN, capability links, or exports.
 - Do not expose TaskDropBox directly to the public Internet.
 - HTTP avoids certificate warnings but is not encrypted; use only on the intended isolated and trusted temporary LAN.
 - Do not add telemetry, external fonts/scripts, cloud dependencies, analytics, or online AI calls.

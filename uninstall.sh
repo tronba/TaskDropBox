@@ -11,6 +11,7 @@ read -r -p "Continue? [y/N]: " CONFIRM
 systemctl disable --now taskdropbox.service 2>/dev/null || true
 rm -f /etc/systemd/system/taskdropbox.service
 rm -f /usr/local/sbin/taskdropbox-manage
+rm -f /usr/local/sbin/taskdropbox-admin
 rm -f /etc/nginx/sites-enabled/taskdropbox /etc/nginx/sites-available/taskdropbox
 systemctl daemon-reload
 systemctl reload nginx 2>/dev/null || true

@@ -1,13 +1,19 @@
 :root { color-scheme: light; font-family: system-ui, sans-serif; line-height: 1.5; }
 * { box-sizing: border-box; }
 body { margin: 0; color: #172033; background: #f4f6f9; }
-.site-header { padding: 1rem max(1rem, calc((100% - 70rem)/2)); background: #173f73; }
-.site-header a { color: white; font-size: 1.25rem; font-weight: 700; text-decoration: none; }
+.site-header { padding: .75rem max(1rem, calc((100% - 70rem)/2)); background: #173f73; color: white; }
+.header-inner, .header-actions, .language-switcher { display: flex; align-items: center; gap: .75rem; }
+.header-inner { justify-content: space-between; }
+.site-header a { color: white; font-weight: 700; }
+.site-brand { font-size: 1.25rem; text-decoration: none; }
+.teacher-header-link { white-space: nowrap; }
+.language-switcher label { margin: 0; }
+.language-switcher select { width: auto; padding: .35rem; font: inherit; }
+.language-switcher button { margin: 0; padding: .4rem .65rem; background: white; color: #173f73; }
 .container { max-width: 70rem; margin: auto; padding: 2rem 1rem 4rem; }
 .site-footer { max-width: 70rem; margin: auto; padding: 1rem; border-top: 1px solid #ccd4df; font-size: .9rem; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
 .student-entry { max-width: 42rem; }
-.teacher-entry { margin-top: 1.5rem; }
 .card, .submission { padding: 1.25rem; background: white; border: 1px solid #ccd4df; border-radius: .5rem; }
 label { display: block; margin-top: .8rem; font-weight: 650; }
 input, textarea { width: 100%; max-width: 48rem; padding: .65rem; border: 1px solid #758399; border-radius: .25rem; font: inherit; }
@@ -24,4 +30,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .late { color: #9a2d19; }
 .answer { max-width: 100%; overflow-wrap: anywhere; white-space: pre-wrap; font: inherit; background: #f7f8fa; padding: 1rem; }
 dt { font-weight: 700; } dd { margin-bottom: .75rem; }
+@media (max-width: 38rem) {
+  .header-inner { align-items: flex-start; }
+  .header-actions { align-items: flex-end; flex-direction: column; }
+  .language-switcher label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
 @media print { button, .site-header { display: none; } body { background: white; } }
