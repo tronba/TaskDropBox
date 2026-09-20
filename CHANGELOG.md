@@ -9,6 +9,7 @@
 - Make the front page pupil-focused and move teacher entry points to `/teacher/`.
 - Generate readable three-word student links while retaining strong teacher administration tokens.
 - Add English and Norwegian Bokmål web interfaces, a browser-local language selector, and an SSH-controlled default language.
+- Keep installer self-tests deterministic when Norwegian Bokmål is configured as the system default.
 - Add the root-only `taskdropbox-admin` interface for status, diagnostics, PIN and language changes, task controls, session revocation, storage checks, and confirmed full-data flushing.
 - Add a `whiptail` administration menu while retaining every scriptable SSH subcommand.
 - Add strictly sanitized rich-text instructions and answers, with formatted HTML and portable text in exports.

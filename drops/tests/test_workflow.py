@@ -22,6 +22,7 @@ class WorkflowTests(TestCase):
         self.settings_override = override_settings(
             CREATOR_PIN_HASH=make_password("012345"),
             BASE_URL="http://10.20.0.10",
+            LANGUAGE_CODE="en",
             DATA_DIR=root,
             PRIVATE_FILES_DIR=root / "files",
             MIN_FREE_DISK_BYTES=0,
