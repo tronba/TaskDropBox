@@ -11,6 +11,8 @@
 - Add English and Norwegian Bokmål web interfaces, a browser-local language selector, and an SSH-controlled default language.
 - Add the root-only `taskdropbox-admin` interface for status, diagnostics, PIN and language changes, task controls, session revocation, storage checks, and confirmed full-data flushing.
 - Treat teacher ZIP export as the preservation workflow and remove operational database backups from V1.
+- Rebuild the Python virtual environment cleanly during upgrades instead of allowing source synchronization to partially delete it.
+- Submit language changes immediately when JavaScript is available while retaining the button fallback, and refresh the interface with a modern responsive visual system.
 - Preview safe images, media, PDFs, and text in new tabs while forcing risky formats to download.
 - Suppress expected SQLite checkpoint and authorization noise during tests.
 - Remove the AI disclosure from the application footer and silence the Nginx proxy-header warning.

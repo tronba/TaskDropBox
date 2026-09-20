@@ -18,6 +18,18 @@ MAX_FILE_MIB=""
 MAX_SUBMISSION_MIB=""
 MIN_FREE_MIB=""
 SKIP_OS_UPDATES=0
+SERVICE_WAS_ACTIVE=0
+
+restart_service_after_failed_install() {
+  local status=$?
+  if [[ $status -ne 0 && $SERVICE_WAS_ACTIVE -eq 1 ]]; then
+    echo "Installation failed after stopping TaskDropBox; attempting to restart the previous service." >&2
+    systemctl start taskdropbox.service 2>/dev/null || true
+  fi
+  return "$status"
+}
+
+trap restart_service_after_failed_install EXIT
 
 usage() {
   echo "Usage: sudo ./install.sh [--upgrade|--reconfigure] [options]"
@@ -196,6 +208,7 @@ install -d -o root -g taskdropbox -m 0750 "$CONFIG_DIR"
 install -d -o taskdropbox -g taskdropbox -m 0750 "$DATA_DIR" "$DATA_DIR/files"
 
 if systemctl is-active --quiet taskdropbox.service; then
+  SERVICE_WAS_ACTIVE=1
   systemctl stop taskdropbox.service
   echo "Stopped the existing TaskDropBox service for a consistent upgrade."
 fi
@@ -207,11 +220,30 @@ fi
 if [[ "$MODE" != "reconfigure" ]]; then
   install -d -o root -g root -m 0755 "$APP_DIR"
   rsync -a --delete \
-    --exclude '.git/' --exclude '.venv/' --exclude 'data/' --exclude '__pycache__/' \
+    --exclude '.git/' --exclude '.venv/' --exclude 'venv/' --exclude '.venv-previous/' \
+    --exclude 'data/' --exclude '__pycache__/' \
     --exclude 'staticfiles/' --exclude '*.pyc' "$SOURCE_DIR/" "$APP_DIR/"
-  python3 -m venv "$APP_DIR/venv"
-  "$APP_DIR/venv/bin/python" -m pip install --upgrade pip
-  "$APP_DIR/venv/bin/python" -m pip install "$APP_DIR"
+
+  VENV_DIR="$APP_DIR/venv"
+  PREVIOUS_VENV_DIR="$APP_DIR/.venv-previous"
+  [[ "$VENV_DIR" == "/opt/taskdropbox/venv" ]] || fail "Virtual-environment path failed its safety check."
+  [[ "$PREVIOUS_VENV_DIR" == "/opt/taskdropbox/.venv-previous" ]] || \
+    fail "Previous virtual-environment path failed its safety check."
+  rm -rf -- "$PREVIOUS_VENV_DIR"
+  if [[ -d "$VENV_DIR" ]]; then
+    mv -- "$VENV_DIR" "$PREVIOUS_VENV_DIR"
+  fi
+  if python3 -m venv "$VENV_DIR" && \
+     "$VENV_DIR/bin/python" -m pip install --upgrade pip && \
+     "$VENV_DIR/bin/python" -m pip install "$APP_DIR"; then
+    rm -rf -- "$PREVIOUS_VENV_DIR"
+  else
+    rm -rf -- "$VENV_DIR"
+    if [[ -d "$PREVIOUS_VENV_DIR" ]]; then
+      mv -- "$PREVIOUS_VENV_DIR" "$VENV_DIR"
+    fi
+    fail "Could not build the new virtual environment; the previous one was restored."
+  fi
 fi
 
 install -d -o taskdropbox -g taskdropbox -m 0755 "$APP_DIR/staticfiles"

@@ -24,3 +24,15 @@ Run the status command and compare server time/timezone with a trusted clock. Co
 
 Ubuntu installed updates that require a reboot. Reboot the VM and rerun the same installer command.
 
+## Upgrade reports that `venv` directories cannot be deleted
+
+An older installer allowed source synchronization to enter the installed Python virtual environment while excluding its bytecode files. This could produce many `cannot delete non-empty directory: venv/...` messages and leave the service stopped, but it did not touch `/var/lib/taskdropbox` or any task data.
+
+Update the source checkout to a release containing the virtual-environment upgrade fix and rerun:
+
+```text
+sudo bash install.sh --upgrade
+sudo taskdropbox-admin doctor
+```
+
+The corrected installer excludes the old environment from synchronization, constructs a clean replacement, and restores the previous environment if construction fails. Do not manually delete `/var/lib/taskdropbox` while recovering.

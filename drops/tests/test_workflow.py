@@ -48,6 +48,7 @@ class WorkflowTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertContains(response, 'class="teacher-header-link"')
         self.assertContains(response, reverse("set_language"))
+        self.assertContains(response, "data-language-switcher")
         self.assertContains(response, 'value="nb"')
 
     def test_pupil_can_change_language_for_their_browser(self):

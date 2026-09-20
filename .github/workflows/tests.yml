@@ -58,6 +58,17 @@ jobs:
           sudo ss -ltn | grep -q '127.0.0.1:8001'
           curl --fail --silent --show-error --output /tmp/taskdropbox-source.tar.gz http://127.0.0.1/source/
           test -s /tmp/taskdropbox-source.tar.gz
+      - name: Verify clean upgrade
+        run: |
+          sudo bash install.sh \
+            --upgrade \
+            --non-interactive \
+            --skip-os-updates \
+            --base-url http://127.0.0.1 \
+            --timezone Europe/Oslo \
+            --min-free-mib 256 2>&1 | tee /tmp/taskdropbox-upgrade.log
+          ! grep -q "cannot delete" /tmp/taskdropbox-upgrade.log
+          curl --fail --silent --show-error http://127.0.0.1/healthz
       - name: Verify preserving-data uninstall
         run: |
           printf 'y\n' | sudo bash uninstall.sh

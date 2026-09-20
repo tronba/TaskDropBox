@@ -2,9 +2,11 @@
 {% block title %}{% translate "TaskDropBox — local assignment hand-in" %}{% endblock %}
 {% block header_actions %}<a class="teacher-header-link" href="{% url 'teacher_home' %}">{% translate "Teacher tools" %}</a>{% endblock %}
 {% block content %}
-<h1>{% translate "Hand in your work" %}</h1>
-<p>{% translate "Open the task your teacher gave you." %}</p>
-<div class="student-entry">
+<div class="home-layout">
+  <div class="page-intro">
+    <h1>{% translate "Hand in your work" %}</h1>
+    <p>{% translate "Open the task your teacher gave you." %}</p>
+  </div>
   <section class="card">
     <h2>{% translate "Open a task" %}</h2>
     <p>{% translate "Paste the student task link or key supplied by your teacher." %}</p>
