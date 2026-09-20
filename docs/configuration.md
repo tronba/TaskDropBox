@@ -5,10 +5,10 @@ Production configuration is stored in `/etc/taskdropbox/taskdropbox.env`, owned 
 Use the SSH-only administration command:
 
 ```text
-sudo taskdropbox-admin help
+sudo taskdropbox-admin
 ```
 
-Common operations include:
+This opens the English interactive menu. Direct commands remain available for automation and recovery:
 
 ```text
 sudo taskdropbox-admin status
@@ -21,6 +21,8 @@ sudo taskdropbox-admin list-tasks
 sudo taskdropbox-admin delete-task TASK-UUID
 sudo taskdropbox-admin close-all
 sudo taskdropbox-admin revoke-sessions
+sudo taskdropbox-admin check-storage --checksums
+sudo taskdropbox-admin checkpoint-database
 sudo taskdropbox-admin flush-data
 ```
 
@@ -36,7 +38,7 @@ Configuration is preserved when application data is flushed. `flush-data` perman
 
 Changing the creator PIN invalidates existing creator sessions. It does not affect task-specific student or administration keys.
 
-After any change:
+The administration tool restarts TaskDropBox when a changed setting requires it. To restart or inspect the service manually:
 
 ```text
 sudo systemctl restart taskdropbox

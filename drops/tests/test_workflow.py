@@ -246,6 +246,36 @@ class WorkflowTests(TestCase):
             manifest = archive.read(manifest_name).decode("utf-8-sig")
             self.assertIn("'=Anna/../Hansen", manifest)
             self.assertTrue(any(name.endswith(" - webgui.txt") for name in names))
+            self.assertTrue(any(name.endswith(" - webgui.html") for name in names))
+
+    def test_rich_text_is_sanitized_and_rendered(self):
+        task, student_token, admin_token = self.create_task_through_ui(
+            instructions_text='<p>Read <strong>carefully</strong><img src=x onerror=alert(1)></p>',
+            instructions_text_format="html",
+        )
+        self.assertEqual(task.instructions_text, "<p>Read <strong>carefully</strong></p>")
+        response = self.client.get(reverse("student_task", args=[student_token]))
+        self.assertContains(response, "<strong>carefully</strong>", html=True)
+        self.assertNotContains(response, "onerror")
+
+        self.client.post(
+            reverse("submit_task", args=[student_token]),
+            {
+                "student_name": "Student",
+                "answer_text": '<p>A <em>formatted</em> answer<script>alert(2)</script></p>',
+                "answer_text_format": "html",
+                "idempotency_key": new_form_nonce(),
+            },
+        )
+        submission = task.submissions.get()
+        self.assertEqual(
+            submission.answer_text,
+            "<p>A <em>formatted</em> answer</p>",
+        )
+        self.client.get(reverse("admin_exchange", args=[admin_token]))
+        response = self.client.get(reverse("manage_task", args=[task.id]))
+        self.assertContains(response, "<em>formatted</em>", html=True)
+        self.assertNotContains(response, "alert(2)")
 
     def test_task_deletion_removes_database_rows_and_files(self):
         task, student_token, admin_token = self.create_task_through_ui()

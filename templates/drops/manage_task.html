@@ -1,8 +1,8 @@
-{% extends "base.html" %}{% load i18n tz %}
+{% extends "base.html" %}{% load i18n tz rich_text %}
 {% block content %}<h1>{{ task.title }}</h1>
 <p><strong>{% translate "Status:" %}</strong> {{ task.get_status_display }}</p>
 {% if task.due_at %}<p><strong>{% translate "Due:" %}</strong> {{ task.due_at|localtime }}</p>{% endif %}
-<h2>{% translate "Instructions" %}</h2><div class="instructions">{{ task.instructions_text|linebreaksbr }}</div>
+<h2>{% translate "Instructions" %}</h2><div class="instructions rich-content">{{ task.instructions_text|render_rich_text }}</div>
 {% if task.attachments.exists %}<h2>{% translate "Task attachments" %}</h2><ul>{% for item in task.attachments.all %}
   <li><a href="{% url 'admin_task_attachment_download' task.id item.id %}" target="_blank" rel="noopener">{{ item.original_name }}</a> ({{ item.size_bytes|filesizeformat }})</li>
 {% endfor %}</ul>{% endif %}
@@ -14,7 +14,7 @@
 <article class="submission">
   <h3>{{ submission.student_name }}</h3>
   <p>{{ submission.submitted_at|localtime }} — {% if submission.is_late %}<strong class="late">{% translate "Late" %}</strong>{% else %}{% translate "On time" %}{% endif %}</p>
-  {% if submission.answer_text %}<pre class="answer">{{ submission.answer_text }}</pre>{% endif %}
+  {% if submission.answer_text %}<div class="answer rich-content">{{ submission.answer_text|render_rich_text }}</div>{% endif %}
   {% if submission.files.all %}<ul>{% for item in submission.files.all %}<li><a href="{% url 'submission_file_download' task.id item.id %}" target="_blank" rel="noopener">{{ item.original_name }}</a> ({{ item.size_bytes|filesizeformat }})</li>{% endfor %}</ul>{% endif %}
   <p><a href="{% url 'delete_submission' task.id submission.id %}">{% translate "Delete this submission" %}</a></p>
 </article>

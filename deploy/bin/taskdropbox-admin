@@ -11,8 +11,9 @@ usage() {
   cat <<'EOF'
 TaskDropBox SSH administration
 
-Usage: sudo taskdropbox-admin COMMAND [arguments]
+Usage: sudo taskdropbox-admin [COMMAND] [arguments]
 
+  (no command)                 Open the interactive administration menu
   status                       Show service and application status
   doctor                       Check services, configuration, database, and storage
   set-pin                      Replace the six-digit creator PIN
@@ -29,6 +30,153 @@ Usage: sudo taskdropbox-admin COMMAND [arguments]
 EOF
 }
 
+menu_output() {
+  local title="$1" temporary result
+  shift
+  temporary="$(mktemp)"
+  set +e
+  "$@" >"$temporary" 2>&1
+  result=$?
+  set -e
+  if [[ $result -ne 0 ]]; then
+    printf '\nCommand exited with status %s.\n' "$result" >>"$temporary"
+  fi
+  whiptail --title "$title" --scrolltext --textbox "$temporary" 24 84 || true
+  rm -f "$temporary"
+}
+
+menu_terminal() {
+  local title="$1" result
+  shift
+  clear
+  echo "TaskDropBox — ${title}"
+  echo
+  set +e
+  "$@"
+  result=$?
+  set -e
+  echo
+  if [[ $result -eq 0 ]]; then
+    echo "Completed successfully."
+  else
+    echo "Command exited with status ${result}."
+  fi
+  read -r -p "Press Enter to return to the menu. "
+}
+
+configuration_menu() {
+  local choice language
+  while true; do
+    choice="$(whiptail --title "Configuration" --menu "Choose a setting" 18 72 8 \
+      language "Default web-interface language" \
+      settings "Network, timezone, and storage limits" \
+      back "Return to main menu" \
+      3>&1 1>&2 2>&3)" || return
+    case "$choice" in
+      language)
+        language="$(whiptail --title "Default web language" --menu \
+          "Pupils can still choose a different language in their browser." 15 72 4 \
+          en "English" nb "Norwegian Bokmål" 3>&1 1>&2 2>&3)" || continue
+        menu_output "Default web language" "$0" set-language "$language"
+        ;;
+      settings) menu_terminal "Reconfigure system settings" "$0" configure ;;
+      back) return ;;
+    esac
+  done
+}
+
+security_menu() {
+  local choice
+  while true; do
+    choice="$(whiptail --title "Security" --menu "Choose an operation" 18 72 8 \
+      pin "Replace the creator PIN" \
+      sessions "Revoke all browser authorization sessions" \
+      back "Return to main menu" \
+      3>&1 1>&2 2>&3)" || return
+    case "$choice" in
+      pin) menu_terminal "Replace creator PIN" "$0" set-pin ;;
+      sessions) menu_terminal "Revoke browser sessions" "$0" revoke-sessions ;;
+      back) return ;;
+    esac
+  done
+}
+
+task_menu() {
+  local choice task_id
+  while true; do
+    choice="$(whiptail --title "Task operations" --menu "Choose an operation" 19 72 9 \
+      list "List tasks without pupil data or keys" \
+      delete "Delete one task by UUID" \
+      close "Close every open task" \
+      back "Return to main menu" \
+      3>&1 1>&2 2>&3)" || return
+    case "$choice" in
+      list) menu_output "Tasks" "$0" list-tasks ;;
+      delete)
+        task_id="$(whiptail --title "Delete task" --inputbox \
+          "Enter the complete task UUID. A second exact confirmation is required." \
+          12 76 3>&1 1>&2 2>&3)" || continue
+        [[ -n "$task_id" ]] && menu_terminal "Delete task" "$0" delete-task "$task_id"
+        ;;
+      close) menu_terminal "Close all tasks" "$0" close-all ;;
+      back) return ;;
+    esac
+  done
+}
+
+maintenance_menu() {
+  local choice
+  while true; do
+    choice="$(whiptail --title "Maintenance" --menu "Choose an operation" 19 72 9 \
+      storage "Verify storage and checksums" \
+      checkpoint "Checkpoint the SQLite database" \
+      back "Return to main menu" \
+      3>&1 1>&2 2>&3)" || return
+    case "$choice" in
+      storage) menu_output "Storage verification" "$0" check-storage --checksums ;;
+      checkpoint) menu_output "Database checkpoint" "$0" checkpoint-database ;;
+      back) return ;;
+    esac
+  done
+}
+
+interactive_menu() {
+  local choice
+  [[ -t 0 && -t 1 ]] || { usage; echo "An interactive terminal is required for the menu." >&2; exit 2; }
+  command -v whiptail >/dev/null || {
+    usage
+    echo "The whiptail package is required for the interactive menu." >&2
+    exit 2
+  }
+  while true; do
+    choice="$(whiptail --title "TaskDropBox administration" --menu \
+      "SSH-only system administration" 22 78 12 \
+      status "Status and service information" \
+      doctor "Run complete diagnostics" \
+      configure "Configuration" \
+      security "Security" \
+      tasks "Task operations" \
+      maintenance "Storage and database maintenance" \
+      flush "Erase all live TaskDropBox data" \
+      about "About TaskDropBox V1.1" \
+      exit "Exit" \
+      3>&1 1>&2 2>&3)" || break
+    case "$choice" in
+      status) menu_output "TaskDropBox status" "$0" status ;;
+      doctor) menu_output "TaskDropBox diagnostics" "$0" doctor ;;
+      configure) configuration_menu ;;
+      security) security_menu ;;
+      tasks) task_menu ;;
+      maintenance) maintenance_menu ;;
+      flush) menu_terminal "Permanently erase all live data" "$0" flush-data ;;
+      about) whiptail --title "About" --msgbox \
+        "TaskDropBox V1.1\n\nOffline emergency assignment hand-in for a school LAN.\n\nhttps://github.com/tronba/TaskDropBox" 14 72 ;;
+      exit) break ;;
+    esac
+  done
+  clear
+}
+
 replace_setting() {
   local key="$1" value="$2" temporary
   temporary="$(mktemp)"
@@ -38,10 +186,13 @@ replace_setting() {
   rm -f "$temporary"
 }
 
-command="${1:-help}"
+command="${1:-menu}"
 shift || true
 
 case "$command" in
+  menu)
+    interactive_menu
+    ;;
   help|-h|--help)
     usage
     ;;

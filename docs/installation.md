@@ -8,14 +8,17 @@ Recommended minimum for a small school deployment: 2 CPU cores, 4 GiB RAM, and 4
 
 1. Assign the VM a static private IP or a DHCP reservation that will not change.
 2. Verify the VM clock and timezone.
-3. Download a tagged TaskDropBox release and verify its published SHA-256 checksum.
-4. Extract the release locally on the VM.
+3. Install Git and clone the official repository, or transfer a reviewed release archive to the VM.
+4. Record the exact Git commit or archive checksum used for the installation.
 5. Choose a six-digit creator PIN and store it temporarily in a root-readable file if using unattended mode.
 
 ## Interactive installation
 
 ```text
-cd /path/to/extracted/taskdropbox
+sudo apt update
+sudo apt install -y git
+git clone https://github.com/tronba/TaskDropBox.git
+cd TaskDropBox
 sudo bash install.sh
 ```
 
@@ -50,7 +53,7 @@ The PIN file must contain exactly six digits. Delete the plaintext PIN file afte
 1. Run `sudo systemctl status taskdropbox nginx`.
 2. Run `sudo taskdropbox-admin doctor`.
 3. Open `http://<static-ip>/` from another computer on the isolated LAN.
-4. Create a disposable task, submit text and a file, export it, and delete it.
+4. Create a disposable task, submit formatted text and a file, export it, and delete it.
 5. Block WAN access and repeat the workflow.
 6. Create a clean VM snapshot only after the offline test passes.
 

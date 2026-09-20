@@ -1,6 +1,6 @@
 # TaskDropBox — Software Design Document
 
-**Status:** Revised V1 implementation specification  
+**Status:** Revised V1.1 implementation specification
 **License:** GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`)  
 **Platform:** Ubuntu Server 26.04 LTS (current point release preferred)  
 **Deployment:** Standalone school LAN, static IP, no runtime Internet dependency  
@@ -12,11 +12,11 @@ TaskDropBox is a self-hosted application for distributing temporary school assig
 
 It is installed and tested before an outage, then runs entirely on an isolated local network. It requires no DNS, certificate infrastructure, cloud service, external authentication, email, CDN, telemetry, or Internet connection at runtime.
 
-There are no teacher or student accounts. A teacher uses one installation-level six-digit creator PIN. Each task receives two independent, unguessable links/keys: one for students and one for teacher administration. Students manually enter their name and submit plain text and/or files. Teachers review submissions, identify late work, export everything, close or reopen the task, and delete it.
+There are no teacher or student accounts. A teacher uses one installation-level six-digit creator PIN. Each task receives two independent, unguessable links/keys: one for students and one for teacher administration. Students manually enter their name and submit constrained rich text and/or files. Teachers review submissions, identify late work, export everything, close or reopen the task, and delete it.
 
 ## 2. Confirmed scope
 
-### Version 1
+### Version 1.1
 
 - Product and repository name: **TaskDropBox** / `taskdropbox`.
 - `AGPL-3.0-or-later` license.
@@ -28,7 +28,7 @@ There are no teacher or student accounts. A teacher uses one installation-level 
 - Desktop and Chromebook browsers are the primary clients.
 - English and Norwegian Bokmål web interface. The SSH installer and operator tools remain English.
 - The operator controls the default web language; each browser can override it without an account or server-side pupil profile.
-- Plain-text task instructions and student web answers.
+- Rich-text task instructions and student web answers with paragraphs, bold, italic, and lists. Server-side sanitization permits no attributes, links, scripts, styles, images, or embeds.
 - No saved drafts or autosave.
 - Optional soft deadline; open tasks accept late work and mark it late.
 - Separate close/reopen control; closed tasks reject submissions.
@@ -39,7 +39,6 @@ There are no teacher or student accounts. A teacher uses one installation-level 
 
 ### Version 2 candidates
 
-- sanitized rich-text instructions and answers;
 - saved drafts, return links, manual save, autosave, conflict handling, and link rotation;
 - additional gettext translation files;
 - an optional open-task directory where teachers may explicitly list selected tasks;
@@ -86,7 +85,7 @@ Future features must not introduce permanent user accounts or required Internet 
 
 ## 4. Privacy and deletion
 
-TaskDropBox V1 collects only task content, task attachments, a student-entered display name, submitted plain text, uploaded files and their original names, random operational identifiers, and timestamps.
+TaskDropBox V1.1 collects only task content, task attachments, a student-entered display name, submitted sanitized rich text, uploaded files and their original names, random operational identifiers, and timestamps.
 
 It does not collect student numbers, email addresses, class membership, analytics identifiers, source IP addresses in application records, or full user-agent strings by default.
 
@@ -110,7 +109,7 @@ The isolated LAN is operationally trusted but may contain curious students. Plai
 
 1. Teacher opens **Teacher tools** from the TaskDropBox front page and selects **Create a task**.
 2. Teacher enters the shared six-digit creator PIN if no valid creator session exists.
-3. Teacher supplies title, plain-text instructions, optional due date/time, optional task attachments, and allowed answer modes.
+3. Teacher supplies title, constrained rich-text instructions, optional due date/time, optional task attachments, and allowed answer modes.
 4. At least one of text or files must be enabled.
 5. Server creates the task and shows a short-lived receipt with independent student and admin URLs, copy/print controls, and a warning that the admin URL cannot be recovered through the normal UI.
 6. Teacher distributes only the student URL.
@@ -123,7 +122,7 @@ The isolated LAN is operationally trusted but may contain curious students. Plai
 4. Student confirms submission.
 5. Server rechecks task state, validates, persists atomically, calculates late state from server time, and redirects to a receipt.
 
-V1 has no saved draft. The form must warn that unsent work is not stored and may be lost if the page closes.
+V1.1 has no saved draft. The form must warn that unsent work is not stored and may be lost if the page closes.
 
 ### Review and export
 
@@ -154,7 +153,7 @@ V1 has no saved draft. The form must warn that unsent work is not stored and may
 ### Task
 
 - title: required, 1–200 characters;
-- instructions: required normalized plain text, maximum 20,000 characters;
+- instructions: required sanitized allowlisted HTML, maximum 20,000 input characters;
 - due time: optional, stored in UTC and displayed in school timezone;
 - attachments: optional and limited by count and size;
 - answer modes: text, files, or both;
@@ -176,7 +175,7 @@ V1 has no saved draft. The form must warn that unsent work is not stored and may
 ### Teacher administration
 
 - view task and status;
-- copy/save the student URL on the one-time creation receipt; because only its hash is stored, the administration page cannot recover a lost student URL in V1;
+- copy/save the student URL on the one-time creation receipt; because only its hash is stored, the administration page cannot recover a lost student URL in V1.1;
 - view/paginate submissions and late state;
 - download individual files;
 - export all submissions as ZIP;
@@ -184,7 +183,7 @@ V1 has no saved draft. The form must warn that unsent work is not stored and may
 - delete one submission;
 - delete the task.
 
-Task editing, grading, accounts, and an operator web dashboard are outside V1.
+Task editing, grading, accounts, and an operator web dashboard are outside V1.1.
 
 ## 8. Architecture
 
@@ -250,7 +249,7 @@ Use UUID primary keys.
 |---|---|
 | `id` | UUID primary key |
 | `title` | varchar(200) |
-| `instructions_text` | normalized plain text |
+| `instructions_text` | sanitized allowlisted HTML |
 | `student_token_hash` | unique indexed SHA-256 digest |
 | `admin_token_hash` | unique indexed SHA-256 digest |
 | `status` | `open` or `closed` |
@@ -271,7 +270,7 @@ UUID, task foreign key with cascade, normalized `original_name`, random `storage
 | `task_id` | cascade foreign key |
 | `receipt_id` | long random unique indexed value |
 | `student_name` | varchar(150), self-reported |
-| `answer_text` | normalized plain text, possibly empty |
+| `answer_text` | sanitized allowlisted HTML, possibly empty |
 | `submitted_at` | authoritative UTC time |
 | `is_late` | immutable classification recorded on acceptance |
 
@@ -339,13 +338,13 @@ Recommended defaults: 10 task attachments, 10 files per submission, 25 MiB per f
 - Remove partial temporary files after failure.
 - Do not trust extensions or browser MIME claims.
 
-V1 accepts ordinary school file types without an upload allowlist. Inline preview eligibility is derived from a narrow filename-based MIME allowlist, never from the browser's claimed upload type. HTML, SVG, scripts, archives, and unknown formats are always served as `application/octet-stream` attachments.
+V1.1 accepts ordinary school file types without an upload allowlist. Inline preview eligibility is derived from a narrow filename-based MIME allowlist, never from the browser's claimed upload type. HTML, SVG, scripts, archives, and unknown formats are always served as `application/octet-stream` attachments.
 
 Submission service flow: resolve task, validate fields and free space, stream to private temporary files, begin a short transaction, lock and recheck task state, calculate late state, create records, move files to final random paths, commit when consistent, and clean up on failure. A maintenance command reports missing and orphaned files.
 
 ## 14. ZIP export
 
-ZIP export is required in V1 and must spool or stream rather than load all content into memory.
+ZIP export is required in V1.1 and must spool or stream rather than load all content into memory.
 
 ```text
 Volcano-assignment_2026-09-19/
@@ -353,13 +352,15 @@ Volcano-assignment_2026-09-19/
   submissions/
     0001_Anna-Hansen/
       Anna-Hansen - webgui.txt
+      Anna-Hansen - webgui.html
       Anna-Hansen - attachment - diagram.pdf
     0002_Mohammed-Ali/
       Mohammed-Ali - webgui.txt
+      Mohammed-Ali - webgui.html
       Mohammed-Ali - attachment - answers.docx
 ```
 
-- Web text becomes UTF-8 `<student name> - webgui.txt`.
+- Each web answer becomes a formatted UTF-8 `<student name> - webgui.html` and a portable plain-text `<student name> - webgui.txt`.
 - Uploads become `<student name> - attachment - <original filename>`.
 - Sequence directories prevent identical student names from colliding.
 - Duplicate filenames receive deterministic numeric suffixes.
@@ -375,7 +376,7 @@ Volcano-assignment_2026-09-19/
 - slow creator-PIN hashing;
 - Nginx rate, connection, timeout, and body limits;
 - CSRF on mutations;
-- normal template escaping for plain text;
+- strict server-side rich-text allowlisting followed by deliberate rendering only of sanitized content;
 - private non-executable file storage;
 - generic 404 for malformed, missing, deleted, or invalid capabilities;
 - no directory listing or raw tokens in logs;
@@ -394,7 +395,7 @@ HTTP cookies cannot be marked `Secure`. Documentation must state this plainly an
 - Support keyboard operation, visible focus, programmatic labels, linked error summaries, and server-rendered validation.
 - Show limits, open/closed state, deadline, and overdue state clearly.
 - Explain that overdue open tasks accept work and mark it late.
-- Warn that V1 does not save unsent work.
+- Warn that V1.1 does not save unsent work.
 - Never reveal submission metadata on student pages.
 - Use local fonts, CSS, icons, and scripts only.
 - Core workflows work with JavaScript disabled.
@@ -406,9 +407,9 @@ The separate teacher page contains two clearly separated sections:
 1. **Create a task** — asks for the system-wide creator PIN and then opens the creation form.
 2. **Manage a task** — accepts a complete secret teacher link or administration key.
 
-Neither entry page lists existing V1 tasks. The teacher page explains that the creation PIN only permits task creation, while every task has its own separate administration secret.
+Neither entry page lists existing V1.1 tasks. The teacher page explains that the creation PIN only permits task creation, while every task has its own separate administration secret.
 
-V1 ships English and Norwegian Bokmål using Django gettext. The operator selects the installation-wide default through the SSH administration tool. A language selector in the page header stores an override only in that browser. The installer and SSH tools always use English. Teacher and student content is never automatically translated.
+V1.1 ships English and Norwegian Bokmål using Django gettext. The operator selects the installation-wide default through the SSH administration tool. A language selector in the page header stores an override only in that browser. The installer and SSH tools always use English. Teacher and student content is never automatically translated.
 
 ## 17. Configuration
 
@@ -441,7 +442,7 @@ Computers -> isolated Wi-Fi/LAN -> static private IP -> Ubuntu VM
                                                      -> TaskDropBox
 ```
 
-Only a reachable static IPv4 address is required. Browsers may label HTTP as not secure, but there is no invalid-certificate warning because no certificate is used. HTTPS with an operator-provided certificate may be added later; certificates and DNS are not V1 requirements.
+Only a reachable static IPv4 address is required. Browsers may label HTTP as not secure, but there is no invalid-certificate warning because no certificate is used. HTTPS with an operator-provided certificate may be added later; certificates and DNS are not V1.1 requirements.
 
 The operator guide covers static IP assignment, client reachability, firewall, isolated SSID, Wi-Fi password, clock verification, link copying/printing, and shutdown.
 
@@ -473,7 +474,7 @@ The root-run installer:
 16. runs configuration, permission, database, service, and HTTP health checks;
 17. prints URL, server time, paths, SSH administration command, and next steps.
 
-It is safely rerunnable, detects existing installations, enters an explicit upgrade/reconfigure path, backs up configuration, and never deletes application data during install or upgrade. Secrets use prompts, protected file descriptors, or root-readable files—not command-line arguments.
+It is safely rerunnable, detects existing installations, enters an explicit upgrade/reconfigure path, preserves configuration and live data, and never deletes application data during install or upgrade. Secrets use prompts, protected file descriptors, or root-readable files—not command-line arguments.
 
 `uninstall.sh` removes services and code but preserves `/var/lib/taskdropbox`. Data removal requires separate confirmation naming the exact path.
 
@@ -492,11 +493,11 @@ During an outage: start/import the prepared VM, attach the isolated LAN, verify 
 
 ## 21. Storage and maintenance
 
-Use SQLite WAL, busy timeout, secure deletion where supported, short transactions, local reliable storage, and 2–4 initially tested Gunicorn workers. Store `/var/lib/taskdropbox/db.sqlite3` and `/var/lib/taskdropbox/files/` together. Below the disk reserve, return HTTP 503 for new writes while preserving reads/admin where possible. Never auto-delete in V1.
+Use SQLite WAL, busy timeout, secure deletion where supported, short transactions, local reliable storage, and 2–4 initially tested Gunicorn workers. Store `/var/lib/taskdropbox/db.sqlite3` and `/var/lib/taskdropbox/files/` together. Below the disk reserve, return HTTP 503 for new writes while preserving reads/admin where possible. Never auto-delete in V1.1.
 
 TaskDropBox is temporary emergency infrastructure and does not provide an operational backup workflow. Teachers export required work promptly. The operator flushes live data after the event; no recovery copy is silently retained.
 
-The root-only `taskdropbox-admin` SSH interface provides:
+The root-only `taskdropbox-admin` SSH interface opens an English `whiptail` menu when run without arguments and retains the following scriptable commands:
 
 - `status` and `doctor` — version, health, services, base URL, detected IPs, time/timezone, language, free space, storage integrity, and anonymous counts;
 - `set-pin` — securely prompt twice, store a new PIN hash, and invalidate existing creator sessions;
@@ -522,7 +523,7 @@ Integration tests cover create → submit → review → export → delete; inva
 
 Security inputs include traversal, absolute paths, backslashes, HTML/script text, CSV prefixes, duplicates, Unicode, very long values, malformed multipart bodies, archive separators, and truncated tokens.
 
-V1 is accepted when:
+V1.1 is accepted when:
 
 1. it installs on clean Ubuntu Server 26.04 and safely handles updates/reboots;
 2. the full workflow works with WAN blocked and no DNS;
@@ -534,7 +535,7 @@ V1 is accepted when:
 8. teachers review, download, and safely export all content;
 9. export names and manifest follow this specification without traversal, collisions, or CSV injection;
 10. upload/rate/disk limits work;
-11. HTML entered as plain text never executes;
+11. rich-text input is reduced to the formatting allowlist and no submitted script, style, URL, image, attribute, or embed executes;
 12. submission/task deletion removes the correct live names, content, and files only;
 13. teachers can export required work and the operator can safely flush all live data;
 14. English strings are translation-ready;
@@ -547,7 +548,7 @@ V1 is accepted when:
 1. Scaffold repository, license, Django settings/templates, health endpoint, and tests.
 2. Implement models, migrations, token utilities, and task creation service.
 3. Implement creator authentication and short-lived link receipt.
-4. Implement student plain-text/file submission and private storage.
+4. Implement sanitized rich-text/file submission and private storage.
 5. Implement deadline classification and close/reopen.
 6. Implement admin token exchange, scoped review, and authorized downloads.
 7. Implement submission/task deletion.
@@ -561,8 +562,8 @@ Each stage leaves tests passing. Authorization, file consistency, deletion, and 
 
 ## 25. Invariants
 
-An implementation agent must not silently change: the product name or license; accountless model; pupil-focused front page with separate teacher tools; system-wide six-digit creator PIN; self-reported per-submission name; independent hashed capabilities; V1 plain text and no drafts; soft deadline plus separate closing; V1 ZIP export; manual retention and reject-only disk behavior; complete live deletion; English/Norwegian web interface with English operator tooling; no V1 QR; desktop/Chromebook priority; Ubuntu 26.04; static-IP HTTP without DNS/certificates; offline runtime; or SQLite/private local files.
+An implementation agent must not silently change: the product name or license; accountless model; pupil-focused front page with separate teacher tools; system-wide six-digit creator PIN; self-reported per-submission name; independent hashed capabilities; V1.1 constrained rich text and no drafts; soft deadline plus separate closing; ZIP export; manual retention and reject-only disk behavior; complete live deletion; English/Norwegian web interface with English operator tooling; no V1.1 QR; desktop/Chromebook priority; Ubuntu 26.04; static-IP HTTP without DNS/certificates; offline runtime; or SQLite/private local files.
 
 ## 26. Handoff prompt
 
-> Implement TaskDropBox V1 from this document as a GitHub-ready AGPL-3.0-or-later project. Target Ubuntu Server 26.04 and standalone HTTP at a static private IP without DNS, certificates, cloud services, or runtime Internet. Use Django, SQLite, Gunicorn, Nginx, server-rendered templates, and minimal optional JavaScript. Do not create accounts. Use a pupil-focused front page for opening tasks and a clearly linked teacher page for Create and Manage entry points. Task creation requires a rate-limited system-wide six-digit PIN whose hash is configured during installation and safely replaceable later; changing it invalidates creator sessions. Student and admin access use separate independent hashed capability keys. V1 has plain-text instructions/answers and no drafts. A due date is soft: open tasks accept work and record late state; closing is the hard stop. Implement private file storage, individual downloads, safe ZIP export with UTF-8 web-answer files, original uploaded documents, readable collision-safe names, and CSV manifest. Manual deletion removes all live task content including names and files. Manual retention and low-disk rejection apply in V1. Ship English and Norwegian Bokmål web interfaces with an SSH-controlled default and a browser-local selector; keep installation and SSH administration English. Pin dependencies, test authorization and security boundaries, and provide an idempotent installer that updates a preparation-time Ubuntu VM, safely handles reboot requirements, and leaves all runtime workflows functional with WAN blocked. Do not add rich text, drafts, automatic retention, QR codes, telemetry, external assets, or online services to V1.
+> Implement TaskDropBox V1.1 from this document as a GitHub-ready AGPL-3.0-or-later project. Target Ubuntu Server 26.04 and standalone HTTP at a static private IP without DNS, certificates, cloud services, or runtime Internet. Use Django, SQLite, Gunicorn, Nginx, server-rendered templates, and minimal optional JavaScript. Do not create accounts. Use a pupil-focused front page for opening tasks and a clearly linked teacher page for Create and Manage entry points. Task creation requires a rate-limited system-wide six-digit PIN whose hash is configured during installation and safely replaceable later; changing it invalidates creator sessions. Student and admin access use separate independent hashed capability keys. V1.1 has strictly sanitized rich-text instructions/answers and no drafts. A due date is soft: open tasks accept work and record late state; closing is the hard stop. Implement private file storage, individual downloads, safe ZIP export with formatted and plain-text web-answer files, original uploaded documents, readable collision-safe names, and CSV manifest. Manual deletion removes all live task content including names and files. Manual retention and low-disk rejection apply. Ship English and Norwegian Bokmål web interfaces with an SSH-controlled default and a browser-local selector; keep installation and SSH administration English and provide a `whiptail` menu over scriptable commands. Pin dependencies, test authorization and security boundaries, and provide an idempotent installer that updates a preparation-time Ubuntu VM, safely handles reboot requirements, and leaves all runtime workflows functional with WAN blocked. Do not add drafts, automatic retention, QR codes, telemetry, external assets, or online services to V1.1.

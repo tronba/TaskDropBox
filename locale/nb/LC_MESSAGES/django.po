@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: TaskDropBox 0.1.0\n"
+"Project-Id-Version: TaskDropBox 1.1.0\n"
 "Language: nb\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -123,6 +123,24 @@ msgstr "Navnet ditt"
 
 msgid "Written answer"
 msgstr "Skriftlig svar"
+
+msgid "Bold"
+msgstr "Fet"
+
+msgid "Italic"
+msgstr "Kursiv"
+
+msgid "Bulleted list"
+msgstr "Punktliste"
+
+msgid "Numbered list"
+msgstr "Nummerert liste"
+
+msgid "Enter task instructions."
+msgstr "Skriv inn oppgaveinstruksjoner."
+
+msgid "The formatted answer is too long."
+msgstr "Det formaterte svaret er for langt."
 
 msgid "Attachments"
 msgstr "Vedlegg"

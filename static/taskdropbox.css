@@ -98,6 +98,27 @@ input, textarea, select {
 }
 textarea { resize: vertical; }
 input[type=checkbox] { width: auto; accent-color: var(--primary); }
+.rich-editor { max-width: 52rem; margin-top: .35rem; overflow: hidden; border: 1px solid #aab7c8; border-radius: .55rem; background: var(--surface); }
+.rich-editor:focus-within { border-color: var(--primary); outline: 3px solid var(--focus); outline-offset: 3px; }
+.rich-editor-toolbar { display: flex; flex-wrap: wrap; gap: .25rem; padding: .45rem; background: #f3f6fa; border-bottom: 1px solid var(--line); }
+.rich-editor-control {
+  min-width: 2.35rem;
+  margin: 0;
+  padding: .38rem .58rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .4rem;
+  box-shadow: none;
+  font-weight: 700;
+}
+.rich-editor-control:hover { color: var(--primary-dark); background: var(--primary-soft); }
+.rich-editor-bold { font-weight: 850; }
+.rich-editor-italic { font-style: italic; }
+.rich-editor-content { min-height: 11rem; padding: .85rem; outline: 0; }
+.rich-content > :first-child { margin-top: 0; }
+.rich-content > :last-child { margin-bottom: 0; }
+.rich-content ul, .rich-content ol { padding-left: 1.5rem; }
 button, .button-link, .danger-link {
   display: inline-block;
   margin-top: .85rem;

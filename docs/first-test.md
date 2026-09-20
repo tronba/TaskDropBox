@@ -68,20 +68,21 @@ From a second computer, open the static-IP URL.
 2. Open **Teacher tools** and confirm it has **Create a task** and **Manage a task**. Enter two incorrect creator PINs, then the correct PIN. Confirm the correct PIN succeeds.
 3. Create a task with:
    - a title;
-   - multiline instructions containing literal `<script>alert(1)</script>` text;
+   - rich-text instructions using bold, italic, and a list;
+   - pasted HTML containing a script, styled element, link, and image;
    - a due time five minutes in the future;
    - text and file answers enabled;
    - one harmless task attachment.
 4. Confirm the student key contains three readable words, then save both generated links outside the browser.
-5. Confirm the script text displays as text and never executes.
+5. Confirm supported formatting remains, unsupported markup is removed, and nothing executes.
 6. Open the student task from its full link.
 7. Open the task attachment. Confirm browser-safe images, media, PDFs, or plain text open in a new tab, while other formats download.
-8. Submit a student name, web answer, and two harmless files.
+8. Submit a student name, formatted web answer, and two harmless files. Include another unsupported pasted HTML sample.
 9. Confirm one receipt appears with name, time, filenames, and on-time status but not answer text.
 10. Refresh the receipt and confirm no second submission is created.
 11. Open the teacher administration link and confirm exactly one submission appears.
 12. Download each file.
-13. Export the ZIP and inspect its manifest, web-answer text file, filenames, and original uploaded content.
+13. Export the ZIP and inspect its manifest, formatted HTML answer, plain-text answer, filenames, and original uploaded content.
 
 ## 5. Deadline, close, and isolation
 
@@ -102,12 +103,13 @@ From a second computer, open the static-IP URL.
 
 ## 7. SSH administration and language
 
-1. Run `sudo taskdropbox-admin status` and `sudo taskdropbox-admin doctor`.
-2. Run `sudo taskdropbox-admin set-language nb`, open a new private browser window, and confirm the web interface defaults to Norwegian Bokmål.
-3. Change that browser to English using the page header and confirm the selection follows the browser through the pupil workflow.
-4. Run `sudo taskdropbox-admin set-language en` and confirm a different new private browser defaults to English.
-5. Test `list-tasks`, `close-all`, `revoke-sessions`, and `delete-task` with disposable tasks.
-6. Export all work that must be retained, then test `flush-data`. Confirm all task links stop working and the configuration remains intact.
+1. Run `sudo taskdropbox-admin`, navigate every menu and submenu, and exit without changing data.
+2. Run `sudo taskdropbox-admin status` and `sudo taskdropbox-admin doctor` directly.
+3. Change the default to Norwegian Bokmål through the menu, open a new private browser window, and confirm the web interface defaults to Norwegian Bokmål.
+4. Change that browser to English using the page header and confirm the selection follows the browser through the pupil workflow.
+5. Restore English as the default and confirm a different new private browser defaults to English.
+6. Test task listing, close-all, session revocation, and single-task deletion from the menu with disposable tasks.
+7. Export all work that must be retained, then test full data erasure. Confirm all task links stop working and the configuration remains intact.
 
 ## 8. Offline operation
 

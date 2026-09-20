@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       TASKDROPBOX_SECRET_KEY: ci-only-secret-key-not-for-production
+      TASKDROPBOX_BASE_URL: http://127.0.0.1
     strategy:
       matrix:
         python-version: ["3.12", "3.14"]
@@ -53,6 +54,8 @@ jobs:
           sudo taskdropbox-admin set-language nb
           sudo grep -q "^TASKDROPBOX_LANGUAGE='nb'$" /etc/taskdropbox/taskdropbox.env
           curl --fail --silent --show-error http://127.0.0.1/ | grep -q "Lever arbeidet ditt"
+          command -v whiptail
+          sudo taskdropbox-admin help | grep -q "interactive administration menu"
           if id -nG www-data | grep -qw taskdropbox; then exit 1; fi
           sudo -u www-data test ! -r /etc/taskdropbox/taskdropbox.env
           sudo ss -ltn | grep -q '127.0.0.1:8001'

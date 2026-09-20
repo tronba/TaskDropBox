@@ -1,4 +1,5 @@
 import csv
+import html
 import io
 import re
 import tempfile
@@ -9,6 +10,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from .storage import safe_absolute_path
+from .rich_text import rich_text_to_plain_text, sanitize_rich_text
 
 
 def safe_component(value, fallback, limit=100):
@@ -47,9 +49,14 @@ def build_task_export(task):
             directory = f"{root}/submissions/{sequence:04d}_{student}"
             used = set()
             if submission.answer_text:
-                name = unique_name(f"{student} - webgui.txt", used)
-                archive.writestr(f"{directory}/{name}", submission.answer_text.encode("utf-8"))
-                rows.append(_manifest_row(sequence, submission, "webgui", "", name, len(submission.answer_text.encode("utf-8")), ""))
+                plain_answer = rich_text_to_plain_text(submission.answer_text)
+                text_name = unique_name(f"{student} - webgui.txt", used)
+                archive.writestr(f"{directory}/{text_name}", plain_answer.encode("utf-8"))
+                rows.append(_manifest_row(sequence, submission, "webgui_text", "", text_name, len(plain_answer.encode("utf-8")), ""))
+                html_name = unique_name(f"{student} - webgui.html", used)
+                html_answer = formatted_answer_document(submission.student_name, submission.answer_text)
+                archive.writestr(f"{directory}/{html_name}", html_answer)
+                rows.append(_manifest_row(sequence, submission, "webgui_html", "", html_name, len(html_answer), ""))
             for item in submission.files.all():
                 original = safe_component(item.original_name, "attachment", 100)
                 name = unique_name(f"{student} - attachment - {original}", used)
@@ -63,6 +70,20 @@ def build_task_export(task):
         archive.writestr(f"{root}/manifest.csv", "\ufeff" + manifest.getvalue())
     spool.seek(0)
     return spool, f"{root}.zip"
+
+
+def formatted_answer_document(student_name, safe_answer_html):
+    title = html.escape(f"Submission from {student_name}")
+    safe_answer_html = sanitize_rich_text(safe_answer_html)
+    document = (
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+        f"<title>{title}</title>"
+        "<style>body{max-width:50rem;margin:3rem auto;padding:0 1rem;"
+        "font:16px/1.55 system-ui,sans-serif;color:#172033}</style></head>"
+        f"<body><h1>{title}</h1>{safe_answer_html}</body></html>"
+    )
+    return document.encode("utf-8")
 
 
 def _manifest_row(sequence, submission, content_type, original, exported, size, checksum):

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
 from .models import Task
+from .rich_text import plain_text_to_html, rich_text_to_plain_text, sanitize_rich_text
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -53,7 +54,28 @@ class TaskCreateForm(forms.ModelForm):
             "allow_text": _("Allow answers written in TaskDropBox"),
             "allow_files": _("Allow file attachments"),
         }
-        widgets = {"instructions_text": forms.Textarea(attrs={"rows": 10})}
+        widgets = {
+            "instructions_text": forms.Textarea(
+                attrs={
+                    "rows": 10,
+                    "data-rich-text": "",
+                    "data-bold-label": _("Bold"),
+                    "data-italic-label": _("Italic"),
+                    "data-bullet-list-label": _("Bulleted list"),
+                    "data-numbered-list-label": _("Numbered list"),
+                }
+            )
+        }
+
+    def clean_instructions_text(self):
+        value = self.cleaned_data["instructions_text"]
+        if self.data.get("instructions_text_format") == "html":
+            value = sanitize_rich_text(value)
+        else:
+            value = plain_text_to_html(value)
+        if not rich_text_to_plain_text(value):
+            raise forms.ValidationError(_("Enter task instructions."))
+        return value
 
     def clean(self):
         cleaned = super().clean()
@@ -77,7 +99,16 @@ class SubmissionForm(forms.Form):
         required=False,
         max_length=100_000,
         label=_("Written answer"),
-        widget=forms.Textarea(attrs={"rows": 12}),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 12,
+                "data-rich-text": "",
+                "data-bold-label": _("Bold"),
+                "data-italic-label": _("Italic"),
+                "data-bullet-list-label": _("Bulleted list"),
+                "data-numbered-list-label": _("Numbered list"),
+            }
+        ),
     )
     files = MultipleFileField(required=False, label=_("Attachments"))
 
@@ -95,9 +126,23 @@ class SubmissionForm(forms.Form):
             raise forms.ValidationError(_("Enter your name."))
         return name
 
+    def clean_answer_text(self):
+        answer = self.cleaned_data["answer_text"].strip()
+        if not answer:
+            return ""
+        if self.data.get("answer_text_format") == "html":
+            answer = sanitize_rich_text(answer)
+        else:
+            answer = plain_text_to_html(answer)
+        if not rich_text_to_plain_text(answer):
+            return ""
+        if len(answer) > 100_000:
+            raise forms.ValidationError(_("The formatted answer is too long."))
+        return answer
+
     def clean(self):
         cleaned = super().clean()
-        answer = cleaned.get("answer_text", "").strip()
+        answer = cleaned.get("answer_text", "")
         files = cleaned.get("files", [])
         if not answer and not files:
             raise forms.ValidationError(_("Write an answer or attach at least one file."))
@@ -110,5 +155,4 @@ class SubmissionForm(forms.Form):
             total += uploaded.size
         if total > settings.MAX_SUBMISSION_BYTES:
             raise forms.ValidationError(_("The combined attachments are too large."))
-        cleaned["answer_text"] = answer
         return cleaned

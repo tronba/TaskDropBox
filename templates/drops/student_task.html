@@ -1,7 +1,7 @@
-{% extends "base.html" %}{% load i18n tz %}
+{% extends "base.html" %}{% load i18n tz rich_text %}
 {% block content %}
 <h1>{{ task.title }}</h1>
-<div class="instructions">{{ task.instructions_text|linebreaksbr }}</div>
+<div class="instructions rich-content">{{ task.instructions_text|render_rich_text }}</div>
 {% if task.due_at %}<p><strong>{% translate "Due:" %}</strong> {{ task.due_at|localtime }}</p>{% endif %}
 {% if task.status == "closed" %}<p class="warning">{% translate "This task is closed and no longer accepts work." %}</p>
 {% else %}

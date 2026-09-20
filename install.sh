@@ -193,7 +193,7 @@ if [[ $SKIP_OS_UPDATES -eq 0 ]]; then
   fi
 fi
 
-apt-get install -y python3 python3-venv python3-pip nginx rsync curl sqlite3 gettext
+apt-get install -y python3 python3-venv python3-pip nginx rsync curl sqlite3 gettext whiptail
 timedatectl set-timezone "$TIME_ZONE"
 systemctl disable --now chrony.service 2>/dev/null || true
 systemctl disable --now systemd-timesyncd.service 2>/dev/null || true
