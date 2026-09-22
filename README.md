@@ -27,13 +27,13 @@ Pupils open a task with the link or readable key supplied by their teacher. Teac
 | --- | --- |
 | ![Pupil start page with a field for the task link or key](Pictures/001.PNG) | ![Teacher tools page with options to create or manage a task](Pictures/002.PNG) |
 
-| Create a task | Save task links |
+| Create a task | Pupil task page |
 | --- | --- |
-| ![Create-task form with instructions, due date, and attachment options](Pictures/003.PNG) | ![Task-created page showing the pupil link, readable key, and example teacher link](Pictures/004.PNG) |
+| ![Create-task form with instructions, due date, and attachment options](Pictures/003.PNG) | ![Pupil task page with written-answer and attachment fields](Pictures/005.PNG) |
 
-| Pupil task page | Teacher task page |
+| Save task links | Teacher task page |
 | --- | --- |
-| ![Pupil task page with written-answer and attachment fields](Pictures/005.PNG) | ![Teacher task page with submission list and export controls](Pictures/006.PNG) |
+| ![Task-created page showing the pupil link, readable key, and example teacher link](Pictures/004.PNG) | ![Teacher task page with submission list and export controls](Pictures/006.PNG) |
 
 ## Requirements
 
