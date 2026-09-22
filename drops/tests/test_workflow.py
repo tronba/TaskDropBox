@@ -406,6 +406,73 @@ class WorkflowTests(TestCase):
         self.assertEqual(self.client.post(reverse("task_create"), payload).status_code, 409)
         self.assertEqual(Task.objects.count(), 1)
 
+    def test_creation_nonce_is_rejected_even_with_a_stale_session_snapshot(self):
+        self.client.post(reverse("creator_login"), {"pin": "012345"})
+        page = self.client.get(reverse("task_create"))
+        nonce = page.context["form"].initial["creation_nonce"]
+        payload = {
+            "title": "One", "instructions_text": "Instructions",
+            "allow_text": "on", "creation_nonce": nonce,
+        }
+        self.assertEqual(self.client.post(reverse("task_create"), payload).status_code, 200)
+        # An overlapping request has already read the pre-creation session contents.
+        session = self.client.session
+        session["task_creation_nonces"] = [digest_token(nonce)]
+        session.save()
+        self.assertEqual(self.client.post(reverse("task_create"), payload).status_code, 409)
+        self.assertEqual(Task.objects.count(), 1)
+
+    def test_accepted_file_only_submission_can_be_retried_after_close(self):
+        task, student_token, _ = self.create_task_through_ui(allow_text="")
+        key = new_form_nonce()
+        endpoint = reverse("submit_task", args=[student_token])
+        first = self.client.post(endpoint, {
+            "student_name": "Student", "idempotency_key": key,
+            "files": SimpleUploadedFile("work.txt", b"work"),
+        })
+        self.assertEqual(first.status_code, 302)
+        task.status = Task.Status.CLOSED
+        task.save(update_fields=["status"])
+        # A retry can recover its receipt without re-selecting the uploaded file.
+        retry = self.client.post(endpoint, {"idempotency_key": key})
+        self.assertEqual(retry.status_code, 302)
+        self.assertEqual(retry.url, first.url)
+        self.assertEqual(task.submissions.count(), 1)
+        fresh = self.client.post(endpoint, {"idempotency_key": new_form_nonce()})
+        self.assertEqual(fresh.status_code, 409)
+
+    def test_accepted_submission_retry_succeeds_when_disk_reserve_is_reached(self):
+        task, student_token, _ = self.create_task_through_ui()
+        endpoint = reverse("submit_task", args=[student_token])
+        key = new_form_nonce()
+        payload = {"student_name": "Student", "answer_text": "Answer", "idempotency_key": key}
+        first = self.client.post(endpoint, payload)
+        self.assertEqual(first.status_code, 302)
+        with patch("drops.services.ensure_space", return_value=False):
+            retry = self.client.post(endpoint, payload)
+            payload["idempotency_key"] = new_form_nonce()
+            fresh = self.client.post(endpoint, payload)
+        self.assertEqual(retry.status_code, 302)
+        self.assertEqual(retry.url, first.url)
+        self.assertEqual(fresh.status_code, 503)
+        self.assertEqual(task.submissions.count(), 1)
+
+    def test_receipt_recovery_does_not_accept_another_tasks_key(self):
+        task, student_token, _ = self.create_task_through_ui()
+        key = new_form_nonce()
+        self.client.post(reverse("submit_task", args=[student_token]), {
+            "student_name": "Student", "answer_text": "Answer", "idempotency_key": key,
+        })
+        other_token = new_student_token()
+        Task.objects.create(
+            title="Other", instructions_text="Instructions",
+            student_token_hash=digest_token(other_token),
+            admin_token_hash=digest_token(new_admin_token()),
+        )
+        retry = self.client.post(reverse("submit_task", args=[other_token]), {"idempotency_key": key})
+        self.assertEqual(retry.status_code, 404)
+        self.assertEqual(task.submissions.count(), 1)
+
 
 class DirectCapabilityTests(TestCase):
     def test_raw_tokens_are_not_stored(self):

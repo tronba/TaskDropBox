@@ -1,15 +1,21 @@
 import csv
+import errno
 import html
-import io
 import re
+import shutil
 import tempfile
 import zipfile
 from pathlib import PurePosixPath
 
+from django.conf import settings
+from django.db.models import Count, Sum
+from django.db.models.functions import Length
 from django.utils import timezone
 from django.utils.text import slugify
 
-from .storage import safe_absolute_path
+from .models import SubmissionFile
+from .services import InsufficientStorageError
+from .storage import ensure_space, safe_absolute_path
 from .rich_text import rich_text_to_plain_text, sanitize_rich_text
 
 
@@ -38,13 +44,48 @@ def csv_safe(value):
 
 
 def build_task_export(task):
-    spool = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
+    # Keep temporary output on the filesystem covered by the configured disk reserve.
+    # This is a conservative estimate, not a reservation against concurrent uploads.
+    submissions = task.submissions.prefetch_related("files").order_by("submitted_at", "id")
+    totals = submissions.aggregate(count=Count("id"), text=Sum(Length("answer_text")))
+    files = SubmissionFile.objects.filter(submission__task=task).aggregate(
+        count=Count("id"), size=Sum("size_bytes")
+    )
+    projected = (
+        (files["size"] or 0) * 1.01
+        + (totals["text"] or 0) * 16
+        + (totals["count"] + files["count"]) * 8192
+        + 65536
+    )
+    if not ensure_space(projected):
+        raise InsufficientStorageError
+    spool = None
+    try:
+        spool = tempfile.TemporaryFile(mode="w+b", dir=settings.DATA_DIR)
+        return _write_task_export(task, submissions, spool)
+    except Exception as error:
+        if spool is not None:
+            spool.close()
+        if isinstance(error, OSError) and error.errno in {errno.ENOSPC, errno.EDQUOT}:
+            raise InsufficientStorageError from error
+        raise
+
+
+def _write_task_export(task, submissions, spool):
     date = timezone.localtime(task.created_at).strftime("%Y-%m-%d")
     root = f"{(slugify(task.title) or 'task')[:80]}_{date}"
-    rows = []
-    with zipfile.ZipFile(spool, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-        submissions = task.submissions.prefetch_related("files").order_by("submitted_at", "id")
-        for sequence, submission in enumerate(submissions, 1):
+    with (
+        tempfile.TemporaryFile(
+            mode="w+", encoding="utf-8-sig", newline="", dir=settings.DATA_DIR
+        ) as manifest,
+        zipfile.ZipFile(spool, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive,
+    ):
+        writer = csv.writer(manifest, lineterminator="\r\n")
+        writer.writerow(["sequence", "submission_id", "receipt_id", "student_name", "submitted_at", "late", "content_type", "original_filename", "exported_filename", "size_bytes", "sha256"])
+        # An explicit chunk size keeps prefetching bounded, including answer text.
+        for sequence, submission in enumerate(submissions.iterator(chunk_size=50), 1):
+            if not ensure_space(0):
+                raise InsufficientStorageError
             student = safe_component(submission.student_name, "student", 60)
             directory = f"{root}/submissions/{sequence:04d}_{student}"
             used = set()
@@ -52,22 +93,25 @@ def build_task_export(task):
                 plain_answer = rich_text_to_plain_text(submission.answer_text)
                 text_name = unique_name(f"{student} - webgui.txt", used)
                 archive.writestr(f"{directory}/{text_name}", plain_answer.encode("utf-8"))
-                rows.append(_manifest_row(sequence, submission, "webgui_text", "", text_name, len(plain_answer.encode("utf-8")), ""))
+                writer.writerow(_manifest_row(sequence, submission, "webgui_text", "", text_name, len(plain_answer.encode("utf-8")), ""))
                 html_name = unique_name(f"{student} - webgui.html", used)
                 html_answer = formatted_answer_document(submission.student_name, submission.answer_text)
                 archive.writestr(f"{directory}/{html_name}", html_answer)
-                rows.append(_manifest_row(sequence, submission, "webgui_html", "", html_name, len(html_answer), ""))
+                writer.writerow(_manifest_row(sequence, submission, "webgui_html", "", html_name, len(html_answer), ""))
             for item in submission.files.all():
+                if not ensure_space(item.size_bytes * 1.01 + 4096):
+                    raise InsufficientStorageError
                 original = safe_component(item.original_name, "attachment", 100)
                 name = unique_name(f"{student} - attachment - {original}", used)
                 archive.write(safe_absolute_path(item.storage_name), f"{directory}/{name}")
-                rows.append(_manifest_row(sequence, submission, "attachment", item.original_name, name, item.size_bytes, item.sha256))
+                writer.writerow(_manifest_row(sequence, submission, "attachment", item.original_name, name, item.size_bytes, item.sha256))
 
-        manifest = io.StringIO(newline="")
-        writer = csv.writer(manifest, lineterminator="\r\n")
-        writer.writerow(["sequence", "submission_id", "receipt_id", "student_name", "submitted_at", "late", "content_type", "original_filename", "exported_filename", "size_bytes", "sha256"])
-        writer.writerows(rows)
-        archive.writestr(f"{root}/manifest.csv", "\ufeff" + manifest.getvalue())
+        manifest.flush()
+        manifest.buffer.seek(0)
+        with archive.open(f"{root}/manifest.csv", "w", force_zip64=True) as destination:
+            shutil.copyfileobj(manifest.buffer, destination, length=64 * 1024)
+    if not ensure_space(0):
+        raise InsufficientStorageError
     spool.seek(0)
     return spool, f"{root}.zip"
 

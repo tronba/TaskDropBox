@@ -15,6 +15,7 @@ class Task(models.Model):
     instructions_text = models.TextField(validators=[MaxLengthValidator(20_000)])
     student_token_hash = models.CharField(max_length=64, unique=True, db_index=True)
     admin_token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    creation_nonce_hash = models.CharField(max_length=64, unique=True, null=True, editable=False)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
     allow_text = models.BooleanField(default=True)
     allow_files = models.BooleanField(default=True)

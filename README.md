@@ -19,6 +19,30 @@ Repository: [github.com/tronba/TaskDropBox](https://github.com/tronba/TaskDropBo
 
 TaskDropBox is temporary emergency infrastructure. Teachers should export required work promptly. The server deliberately has no operational backup workflow.
 
+## Screenshots
+
+Pupils open a task with the link or readable key supplied by their teacher. Teachers use a separate page to create or manage tasks.
+
+| Pupil hand-in | Teacher tools |
+| --- | --- |
+| ![Pupil start page with a field for the task link or key](Pictures/001.PNG) | ![Teacher tools page with options to create or manage a task](Pictures/002.PNG) |
+
+Teachers can write formatted instructions, set a due date, and choose whether pupils may submit written answers and files.
+
+![Create-task form with instructions, due date, and attachment options](Pictures/003.PNG)
+
+After creating a task, the teacher receives the pupil link and the private teacher link to save or print.
+
+![Task-created page showing the pupil link, readable key, and example teacher link](Pictures/004.PNG)
+
+Pupils see the instructions and submit their work from the task page.
+
+![Pupil task page with written-answer and attachment fields](Pictures/005.PNG)
+
+The private teacher page shows submissions and provides close and ZIP export controls.
+
+![Teacher task page with submission list and export controls](Pictures/006.PNG)
+
 ## Requirements
 
 - Ubuntu Server 26.04 LTS on an AMD64 VM
@@ -194,6 +218,18 @@ python -m ruff check .
 ```
 
 ## Security boundaries
+
+Pupils should connect directly to the server's LAN address. Request limits apply per
+client IP address. If a proxy, VPN gateway, or address-translating router makes several
+pupils appear under one address, they share those limits and may receive HTTP 429
+(too many requests). Review the Nginx rate limits before using that network layout.
+
+Only one ZIP export can run or download through Nginx at a time across the server.
+Another export request receives HTTP 429; wait for the current export to finish and
+retry. This leaves application capacity available for pupils. Exports process answers
+in batches and use temporary disk storage in the data directory. Keep enough free
+space for an additional copy of the exported work, plus the configured disk reserve;
+an export is rejected if its estimated space requirement exceeds that allowance.
 
 TaskDropBox uses plain HTTP by design for a rapidly deployable isolated LAN. HTTP does not protect traffic from someone able to intercept that LAN. Do not expose the service directly to the public Internet.
 

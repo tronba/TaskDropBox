@@ -37,7 +37,13 @@ def create_task(cleaned_data, uploaded_files):
         if not ensure_space(0):
             raise InsufficientStorageError
         with transaction.atomic():
+            # IMMEDIATE transactions serialize this claim across SQLite workers.
+            nonce = cleaned_data.get("creation_nonce")
+            nonce_hash = digest_token(nonce) if nonce else None
+            if nonce_hash and Task.objects.filter(creation_nonce_hash=nonce_hash).exists():
+                raise TaskCreationAlreadyUsedError
             task = Task.objects.create(
+                creation_nonce_hash=nonce_hash,
                 title=cleaned_data["title"].strip(),
                 instructions_text=cleaned_data["instructions_text"].strip(),
                 due_at=cleaned_data.get("due_at"),
@@ -68,6 +74,9 @@ def create_task(cleaned_data, uploaded_files):
 
 
 def create_submission(task, cleaned_data, uploaded_files):
+    existing = existing_submission(task, cleaned_data["idempotency_key"])
+    if existing:
+        return existing
     prepared = []
     committed = []
     try:
@@ -82,13 +91,14 @@ def create_submission(task, cleaned_data, uploaded_files):
             raise InsufficientStorageError
         now = timezone.now()
         with transaction.atomic():
-            locked_task = Task.objects.select_for_update().get(pk=task.pk)
+            try:
+                locked_task = Task.objects.select_for_update().get(pk=task.pk)
+            except Task.DoesNotExist as error:
+                raise TaskClosedError from error
             key_hash = digest_token(cleaned_data["idempotency_key"])
-            existing = Submission.objects.filter(idempotency_key_hash=key_hash).first()
+            existing = existing_submission(locked_task, cleaned_data["idempotency_key"])
             if existing:
-                if existing.task_id == locked_task.id:
-                    return existing
-                raise InvalidIdempotencyKeyError
+                return existing
             if locked_task.status != Task.Status.OPEN:
                 raise TaskClosedError
             submission = Submission.objects.create(
@@ -130,6 +140,17 @@ class TaskClosedError(Exception):
     pass
 
 
+class TaskCreationAlreadyUsedError(Exception):
+    pass
+
+
+def existing_submission(task, key):
+    existing = Submission.objects.filter(idempotency_key_hash=digest_token(key)).first()
+    if existing and existing.task_id != task.pk:
+        raise InvalidIdempotencyKeyError
+    return existing
+
+
 class InsufficientStorageError(Exception):
     pass
 
@@ -139,16 +160,18 @@ class InvalidIdempotencyKeyError(Exception):
 
 
 def delete_submission(submission):
-    names = list(submission.files.values_list("storage_name", flat=True))
-    trash, staged = stage_deletions(names)
+    trash, staged = None, []
     try:
         with transaction.atomic():
+            names = list(submission.files.values_list("storage_name", flat=True))
+            trash, staged = stage_deletions(names)
             submission_id = submission.id
             task_id = submission.task_id
             submission.delete()
     except Exception:
         restore_staged(staged)
-        purge_trash(trash, ignore_errors=True)
+        if trash is not None:
+            purge_trash(trash, ignore_errors=True)
         raise
     try:
         purge_trash(trash)
@@ -160,18 +183,21 @@ def delete_submission(submission):
 
 
 def delete_task(task):
-    names = list(task.attachments.values_list("storage_name", flat=True))
-    names.extend(
-        SubmissionFile.objects.filter(submission__task=task).values_list("storage_name", flat=True)
-    )
-    trash, staged = stage_deletions(names)
+    trash, staged = None, []
     try:
+        # SQLite's IMMEDIATE transaction excludes new writers before enumerating files.
         with transaction.atomic():
+            names = list(task.attachments.values_list("storage_name", flat=True))
+            names.extend(
+                SubmissionFile.objects.filter(submission__task=task).values_list("storage_name", flat=True)
+            )
+            trash, staged = stage_deletions(names)
             task_id = task.id
             task.delete()
     except Exception:
         restore_staged(staged)
-        purge_trash(trash, ignore_errors=True)
+        if trash is not None:
+            purge_trash(trash, ignore_errors=True)
         raise
     try:
         purge_trash(trash)

@@ -1,4 +1,7 @@
 {% extends "base.html" %}{% load i18n %}
 {% block content %}<h1>{% translate "Storage temporarily unavailable" %}</h1>
-<p>{% translate "TaskDropBox is preserving its disk-space reserve and cannot accept new content. Existing work has not been deleted. Please contact the operator." %}</p>{% endblock %}
-
+{% if exporting %}
+<p>{% translate "There is not enough free disk space to prepare this export. Existing work has not been deleted. Please contact the operator." %}</p>
+{% else %}
+<p>{% translate "TaskDropBox is preserving its disk-space reserve and cannot accept new content. Existing work has not been deleted. Please contact the operator." %}</p>
+{% endif %}{% endblock %}

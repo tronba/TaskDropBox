@@ -3,6 +3,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpResponse
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,10 +30,12 @@ from .services import (
     InsufficientStorageError,
     InvalidIdempotencyKeyError,
     TaskClosedError,
+    TaskCreationAlreadyUsedError,
     create_submission,
     create_task,
     delete_submission,
     delete_task,
+    existing_submission,
 )
 from .storage import UploadTooLargeError, safe_absolute_path
 from .tokens import digest_token, extract_key, new_form_nonce
@@ -126,6 +129,9 @@ def task_create(request):
             task, student_token, admin_token = create_task(
                 form.cleaned_data, form.cleaned_data.get("attachments", [])
             )
+        except TaskCreationAlreadyUsedError:
+            form.add_error(None, _("This creation form was already used or has expired."))
+            return render(request, "drops/task_create.html", {"form": form}, status=409)
         except InsufficientStorageError:
             return render(request, "drops/storage_unavailable.html", status=503)
         except UploadTooLargeError:
@@ -193,6 +199,19 @@ def student_task(request, student_token):
 @require_POST
 def submit_task(request, student_token):
     task = task_by_student_token(student_token)
+    # A retry needs only its valid key, even if the browser cannot resend attachments.
+    key_field = SubmissionForm.base_fields["idempotency_key"]
+    try:
+        key = key_field.clean(request.POST.get("idempotency_key"))
+    except ValidationError:
+        key = None
+    if key:
+        try:
+            existing = existing_submission(task, key)
+        except InvalidIdempotencyKeyError:
+            raise Http404
+        if existing:
+            return redirect("submission_receipt", receipt_id=existing.receipt_id)
     if task.status != Task.Status.OPEN:
         return render(request, "drops/task_closed.html", {"task": task}, status=409)
     form = SubmissionForm(request.POST, request.FILES, task=task)
@@ -291,7 +310,10 @@ def admin_task_attachment_download(request, task_id, file_id):
 @require_GET
 def export_task(request, task_id):
     task = admin_task_or_404(request, task_id)
-    spool, filename = build_task_export(task)
+    try:
+        spool, filename = build_task_export(task)
+    except InsufficientStorageError:
+        return render(request, "drops/storage_unavailable.html", {"exporting": True}, status=503)
     return FileResponse(spool, as_attachment=True, filename=filename, content_type="application/zip")
 
 

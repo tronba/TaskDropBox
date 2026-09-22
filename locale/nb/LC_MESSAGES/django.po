@@ -342,3 +342,6 @@ msgstr "Ett eller flere vedlegg overskred opplastingsgrensene."
 
 msgid "The task and all of its live content were deleted."
 msgstr "Oppgaven og alt aktivt innhold ble slettet."
+
+msgid "There is not enough free disk space to prepare this export. Existing work has not been deleted. Please contact the operator."
+msgstr "Det er ikke nok ledig diskplass til å klargjøre denne eksporten. Eksisterende arbeid er ikke slettet. Kontakt administratoren."
