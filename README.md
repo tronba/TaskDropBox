@@ -1,6 +1,6 @@
 # TaskDropBox V1.1
 
-TaskDropBox is an accountless assignment hand-in box for an isolated school LAN. It is prepared before an Internet outage and then runs on an Ubuntu Server installation, either on physical hardware or in a VM, without DNS, cloud services, external assets, or runtime Internet access.
+TaskDropBox is an accountless assignment hand-in box for an isolated school LAN. It is prepared before an Internet outage and then runs on Ubuntu Server without DNS, cloud services, external assets, or runtime Internet access.
 
 Repository: [github.com/tronba/TaskDropBox](https://github.com/tronba/TaskDropBox)
 
@@ -37,7 +37,7 @@ Pupils open a task with the link or readable key supplied by their teacher. Teac
 
 ## Requirements
 
-- Ubuntu Server 26.04 LTS on an AMD64 physical server or VM
+- Ubuntu Server 26.04 LTS on AMD64
 - Static private IPv4 address or fixed DHCP reservation
 - Temporary Internet access during installation and upgrades
 - Recommended minimum: 2 CPU cores, 4 GiB RAM, and 40 GiB local storage
@@ -227,7 +227,7 @@ TaskDropBox uses plain HTTP by design for a rapidly deployable isolated LAN. HTT
 
 Capability links grant access. Treat teacher links as secrets, restrict SSH to operators, use a temporary protected network, and shut down or flush the server after the event.
 
-Security reports are described in [SECURITY.md](SECURITY.md). The detailed implementation specification is in [TaskDropBox_Design_Document.md](TaskDropBox_Design_Document.md), and the disposable-VM acceptance procedure is in [docs/first-test.md](docs/first-test.md).
+Security reports are described in [SECURITY.md](SECURITY.md). The detailed implementation specification is in [TaskDropBox_Design_Document.md](TaskDropBox_Design_Document.md), and the acceptance procedure is in [docs/first-test.md](docs/first-test.md).
 
 ## License and development disclosure
 
